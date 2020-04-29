@@ -71,7 +71,8 @@ iraf.imdelete('stxeqxbrg@'+ic.lst_std, verify='no')
 
 for std in iraf.type(ic.lst_std, Stdout=1):
     std = std.strip()
-    iraf.gfskysub('txeqxbrg'+std, fl_inter='no')
+    iraf.gfskysub('txeqxbrg'+std, fl_inter='no',
+                  combine='median', sepslits='yes')
 
 os.system('ds9 &')
 iraf.sleep(5.0)
