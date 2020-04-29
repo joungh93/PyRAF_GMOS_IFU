@@ -58,13 +58,15 @@ for flat in iraf.type(ic.lst_flat, Stdout=1):
 # QE correction and extract
 iraf.imdelete('eqbrg@'+ic.lst_flat)
 
+flatref = iraf.type(ic.lst_flat, Stdout=1)[0]
 arc0 = iraf.type(ic.lst_arc, Stdout=1)[0]
 
 iraf.imdelete('qbrg@'+ic.lst_flat)
 iraf.imdelete('eqbrg@'+ic.lst_flat)
-iraf.gfreduce('brg@'+ic.lst_flat, fl_extract='yes', fl_qecorr='yes',
-              qe_refim='erg'+arc0, fl_addmdf='no', fl_bias='no',
-              fl_over='no', fl_trim='no', mdffile=ic.nmdf, mdfdir='./',
+iraf.gfreduce('brg@'+ic.lst_flat, recenter='no', reference='erg'+flatref,
+              fl_extract='yes', fl_qecorr='yes', qe_refim='erg'+arc0,
+              fl_addmdf='no', fl_bias='no', fl_over='no', fl_trim='no',
+              mdffile=ic.nmdf, mdfdir='./',
               slits='both', line=1400, fl_fluxcal='no', fl_gscrrej='no',
               fl_wavtran='no', fl_skysub='no', fl_inter='no',
               fl_vardq='yes')
