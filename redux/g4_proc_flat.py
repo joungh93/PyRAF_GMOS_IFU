@@ -58,6 +58,7 @@ for flat in iraf.type(ic.lst_flat, Stdout=1):
 # QE correction and extract
 iraf.imdelete('eqbrg@'+ic.lst_flat)
 
+flatref = iraf.type(ic.lst_flat, Stdout=1)[0]
 arc0 = iraf.type(ic.lst_arc, Stdout=1)[0]
 
 iraf.imdelete('qbrg@'+ic.lst_flat)
