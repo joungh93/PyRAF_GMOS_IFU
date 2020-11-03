@@ -23,7 +23,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * `./standard/` : A reduction directory for standard star data
 
 ## Workflow
-### Initial data check using SQL
+### 1) Initial data check using SQL
 ```
 cd raw/
 python obslog.py obsLog.sqlite3
