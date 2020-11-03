@@ -4,10 +4,18 @@
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 
+## Prerequisites
+* Gemini GMOS/IFU raw data and the associated calibration data (bias) will be needed.
+* The following Python modules should be installed.
+  * blabla
+* The following files should be in the working directory.
+  * blabla
+
 ## Subdirectories
 * `./analysis/` : An analysis directory of the processed GMOS/IFU data
 * `./bias/` : A reduction directory for bias data
 * `./calibrations/` : A calibration data backup directory (for safety)
-* `./raw/` : Raw data & `obslog.py` downloaded from [Gemini Data Archive](https://archive.gemini.edu/searchform) and [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/)
 * `./obslog/` : Text files of observational log text files retrieved from [Gemini Data Archive](https://archive.gemini.edu/searchform)
-
+* `./raw/` : Raw data & `obslog.py` downloaded from [Gemini Data Archive](https://archive.gemini.edu/searchform) and [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/)
+* `./redux/` : A reduction directory for object data
+* `./standard/` : A reduction directory for standard star data
