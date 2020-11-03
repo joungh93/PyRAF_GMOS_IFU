@@ -13,7 +13,7 @@ from astropy.io import fits
 
 
 current_dir = os.getcwd()
-dir_raw = 'Raw/'
+dir_raw = 'raw/'
 
 
 # ----- Collecting & sorting raw files ----- #
@@ -28,7 +28,8 @@ for i in rawfile:
 	objtype = hdr['OBSTYPE'].strip()
 	objclass = hdr['OBSCLASS'].strip()
 	centwave = str(hdr['CENTWAVE'])
-	f.write(i.strip('.fits')+'   '+objtype+'   '+objclass+'   '+centwave+'\n')
+	datalabel = hdr['DATALAB'].strip()
+	f.write(i.strip('.fits')+'   '+objtype+'   '+objclass+'   '+centwave+'   '+datalabel+'\n')
 f.close()
 
 os.chdir(current_dir)
