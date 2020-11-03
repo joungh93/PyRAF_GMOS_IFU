@@ -3,11 +3,16 @@
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
+* This package is applicable to an observing program with a single field, not yet to multiple programs/fields... :crying_cat_face: :sweat_drops:
+* 
+
+(for an observing program with a single field, not yet applicable to multiple programs/fields :crying_cat_face: :sweat_drops:)
 
 ## Prerequisites
 * Gemini GMOS/IFU raw data and the associated calibration data (bias) will be needed.
 * The current versions of Python modules in this package are below.
   * ``numpy == 1.18.5``
+  * ``pandas == 1.1.3``
   * ``astropy == 4.0.2``
 * The following files should be in the working directory.
   * `login.cl` : PyRAF startup file
