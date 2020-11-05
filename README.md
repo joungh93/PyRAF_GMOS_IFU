@@ -3,10 +3,8 @@
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
-* This package is applicable to an observing program with a single field, not yet to multiple programs/fields... :crying_cat_face: :sweat_drops:
+* This package is only applicable to an observing program with a single field (not yet to multiple programs/fields... :crying_cat_face: :sweat_drops:).
 * 
-
-(for an observing program with a single field, not yet applicable to multiple programs/fields :crying_cat_face: :sweat_drops:)
 
 ## Prerequisites
 * Gemini GMOS/IFU raw data and the associated calibration data (bias) will be needed.
