@@ -31,7 +31,7 @@ KW_MAP = [('FILE', 'File', 'TEXT UNIQUE ON CONFLICT IGNORE'),
           ('MASKTYP',  'MaskType', 'TEXT NOT NULL'),
           ('PA',       'Rotator', 'REAL NOT NULL'),
 #          ('GRWLEN',   'CentWave', 'REAL NOT NULL'),
-          ('CENTWAVE', 'CentWave', 'REAL NOT NULL')
+          ('CENTWAVE', 'CentWave', 'REAL NOT NULL'),
           ('EXPTIME',  'T_exp', 'REAL NOT NULL'),
           ('AIRMASS',  'Airmass', 'REAL')]
 
