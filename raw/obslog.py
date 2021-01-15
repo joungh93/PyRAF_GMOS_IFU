@@ -30,7 +30,8 @@ KW_MAP = [('FILE', 'File', 'TEXT UNIQUE ON CONFLICT IGNORE'),
           ('MASKNAME', 'AperMask', 'TEXT NOT NULL'),
           ('MASKTYP',  'MaskType', 'TEXT NOT NULL'),
           ('PA',       'Rotator', 'REAL NOT NULL'),
-          ('GRWLEN',   'CentWave', 'REAL NOT NULL'),
+#          ('GRWLEN',   'CentWave', 'REAL NOT NULL'),
+          ('CENTWAVE', 'CentWave', 'REAL NOT NULL')
           ('EXPTIME',  'T_exp', 'REAL NOT NULL'),
           ('AIRMASS',  'Airmass', 'REAL')]
 
