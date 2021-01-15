@@ -161,6 +161,7 @@ def obsLog(args):
 
     # Create DB table
     fieldNames = OBS_FIELDS + KW_MAP
+    os.system('rm -rfv '+args.dbFile)
     with sqlite3.connect(args.dbFile) as db:
         mkDbTable(db, 'obslog', list(zip(*fieldNames))[1], list(zip(*fieldNames))[2])
 
