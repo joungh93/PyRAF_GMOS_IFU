@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2020. 11. 03.)
+(updated on 2021. 1. 18.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
@@ -21,7 +21,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * `./bias/` : A reduction directory for bias data
 * `./calibrations/` : A calibration data backup directory (for safety)
 * `./obslog/` : Text files of observational log text files retrieved from [Gemini Data Archive](https://archive.gemini.edu/searchform)
-* `./raw/` : Raw data & `obslog.py` downloaded from [Gemini Data Archive](https://archive.gemini.edu/searchform) and [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/)
+* `./raw/` : Raw data from [Gemini Data Archive](https://archive.gemini.edu/searchform) and `obslog.py` from [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/) with a few bugs revised
 * `./redux/` : A reduction directory for object data
 * `./standard/` : A reduction directory for standard star data
 
