@@ -15,6 +15,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * The following files should be in the working directory.
   * `login.cl` : PyRAF startup file
   * `lacos_spec.cl` : L.A.Cosmic task definition
+* Before beginning, you have to check all the observation log files from [Gemini Data Archive](https://archive.gemini.edu/searchform). If there are some problematic data files (due to **_low counts_** or **_saturation_**), you should remove them from `./raw/` directory or move them to other paths.
 
 ## Subdirectories
 * `./analysis/` : An analysis directory of the processed GMOS/IFU data
