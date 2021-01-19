@@ -13,7 +13,7 @@ from astropy.io import fits
 
 
 current_dir = os.getcwd()
-dir_raw = 'Raw/'
+dir_raw = 'raw/'
 
 
 # ----- Running DS9 for viewing raw data ----- #
