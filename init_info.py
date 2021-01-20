@@ -24,12 +24,23 @@ rawfile = sorted(glob.glob('*.fits'))
 # ----- Reading FITS headers ----- #
 f = open(current_dir+'/'+'info.txt','w')
 for i in rawfile:
-	hdr = fits.getheader(i)
+	hdr = fits.getheader(i, ext=0)
 	objtype = hdr['OBSTYPE'].strip()
 	objclass = hdr['OBSCLASS'].strip()
 	centwave = str(hdr['CENTWAVE'])
 	datalabel = hdr['DATALAB'].strip()
-	f.write(i.strip('.fits')+'   '+objtype+'   '+objclass+'   '+centwave+'   '+datalabel+'\n')
+	exptime = f"{hdr['EXPTIME']:.1f}"
+	mask = hdr['MASKNAME'].strip()
+	grating = hdr['GRATING'].strip()
+
+	f.write(i.strip('.fits')+'   ')
+	f.write(objtype+'   ')
+	f.write(objclass+'   ')
+	f.write(centwave+'   ')
+	f.write(datalabel+'   ')
+	f.write(exptime+'   ')
+	f.write(mask+'   ')
+	f.write(grating+'\n')
 f.close()
 
 os.chdir(current_dir)
