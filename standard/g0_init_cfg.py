@@ -13,7 +13,7 @@ import glob, os
 
 # ----- File name & directory ----- #
 procbias = 'Mbias.fits'
-rawdir = '../Raw/'
+rawdir = '../raw/'
 caldir = '../calibrations/'
 dir_iraf = '../'
 dir_db = 'database/'
