@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2021. 1. 18.)
+(updated on 2021. 3. 23.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
@@ -16,6 +16,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
   * `login.cl` : PyRAF startup file
   * `lacos_spec.cl` : L.A.Cosmic task definition
 * Before beginning, you have to check all the observation log files from [Gemini Data Archive](https://archive.gemini.edu/searchform). If there are some problematic data files (due to **_low counts_** or **_saturation_**), you should remove them from `./raw/` directory or move them to other paths.
+* [DS9](https://sites.google.com/cfa.harvard.edu/saoimageds9) will be needed for visual inspection of each FITS file.
 
 ## Subdirectories
 * `./analysis/` : An analysis directory of the processed GMOS/IFU data
@@ -23,11 +24,12 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * `./calibrations/` : A calibration data backup directory (for safety)
 * `./obslog/` : Text files of observational log text files retrieved from [Gemini Data Archive](https://archive.gemini.edu/searchform)
 * `./raw/` : Raw data from [Gemini Data Archive](https://archive.gemini.edu/searchform) and `obslog.py` from [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/) with a few bugs revised
+  * `./raw/aux/` : Auxillary data with some problems (not included in the reduction process)
 * `./redux/` : A reduction directory for object data
 * `./standard/` : A reduction directory for standard star data
 
 ## Workflow
-### 1) Initial data check using SQL
+### 1) Initial data check using SQL and DS9
 ```
 cd raw/
 python obslog.py obsLog.sqlite3
@@ -68,4 +70,9 @@ FROM obslog WHERE ObsType='FLAT' GROUP BY File;
 SELECT File,DateObs,Instrument,Object,ObsType,ObsClass,CcdBin,RoI,Disperser,CentWave,T_exp,use_me
 FROM obslog WHERE ObsType='OBJECT' AND ObsClass='dayCal' GROUP BY File;
 ```
+
+After checking these, run ``view_rawdata.py`` with revising the file names for visual inspection. If there are any problems in some raw data files, please move them in a seperate directory (`./raw/aux/`) in order not to include them in the reduction process.
+
+
+
 
