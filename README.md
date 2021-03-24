@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2021. 3. 23.)
+(updated on 2021. 3. 24.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
@@ -73,6 +73,14 @@ FROM obslog WHERE ObsType='OBJECT' AND ObsClass='dayCal' GROUP BY File;
 
 After checking these, run ``view_rawdata.py`` with revising the file names for visual inspection. If there are any problems in some raw data files, please move them in a seperate directory (`./raw/aux/`) in order not to include them in the reduction process.
 
+### 2) Writing raw data file list
+```
+$ ipython
+> run init_info.py
+> (run view_rawdata.py)
+> run mk_list.py
+```
 
+``init_info.py`` writes a text file with all the information of raw data, and ``mk_list.py`` makes the basic structures of directories for the reduction process.
 
 
