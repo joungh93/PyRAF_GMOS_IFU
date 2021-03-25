@@ -95,3 +95,4 @@ $ ipython
 > run mk_bias.py
 ```
 
+After running this code, please check if ``Mbias.fits`` is created well in `./calibrations/`.
