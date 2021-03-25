@@ -76,7 +76,7 @@ n/s: Gemini north or south
 [CCD]: EEV or HAMAMATSU
 '''
 
-nmdf = 'new_gsifu_slits_mdf_HAM.fits'
+nmdf = 'new_'+mdf
 '''
 New MDF name
 '''
