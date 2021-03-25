@@ -12,6 +12,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
   * ``numpy == 1.18.5``
   * ``pandas == 1.1.3``
   * ``astropy == 4.0.2``
+  * ``astroconda`` ([Reference link](https://astroconda.readthedocs.io/en/latest/))
 * The following files should be in the working directory.
   * `login.cl` : PyRAF startup file
   * `lacos_spec.cl` : L.A.Cosmic task definition
@@ -83,4 +84,14 @@ $ ipython
 
 ``init_info.py`` writes a text file with all the information of raw data, and ``mk_list.py`` makes the basic structures of directories for the reduction process.
 
+### 3) Creating master bias
+You need to switch your Python environment to Python 2 for using [astroconda (with IRAF)](https://astroconda.readthedocs.io/en/latest/installation.html#legacy-software-stack-with-iraf) hereafter.
+
+```
+$ cd bias/
+$ conda activiate iraf27 
+$ ipython
+(Python 2.7)
+> run mk_bias.py
+```
 
