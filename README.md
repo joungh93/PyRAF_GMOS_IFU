@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2021. 3. 24.)
+(updated on 2021. 3. 25.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
