@@ -41,7 +41,7 @@ exact name of [starname].dat
 stardir = 'onedstds$oke1990/'
 '''
 Directory name of standard star data file
-'onedstds$[subdirectory]'
+'onedstds$[subdirectory]/'
 '''
 
 extinction = 'onedstds$ctioextinct.dat'
