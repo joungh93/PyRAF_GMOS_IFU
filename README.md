@@ -6,7 +6,9 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * This package is only applicable to an observing program with a single field (not yet to multiple programs/fields... :crying_cat_face: :sweat_drops:).
 * In principle, **_one science observation_** per **_one GCAL flat_** is best for this GMOS/IFU reduction workflow. However, there are some exclusive cases (i.e. saturated flats). These codes will be improved to deal with the problems.
 * This code is only for GMOS/IFU 2-slit mode. For 1-slit mode, I will update later.
-* Reference: [GMOS/IFU-1 Data Reduction Tutorial](https://gmos-ifu-1-data-reduction-tutorial-gemini-iraf.readthedocs.io/en/latest/index.html)
+* Reference
+  * [GMOS/IFU-1 Data Reduction Tutorial](https://gmos-ifu-1-data-reduction-tutorial-gemini-iraf.readthedocs.io/en/latest/index.html)
+  * [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/index.html)
 
 ## Prerequisites
 * Gemini GMOS/IFU raw data and the associated calibration data (bias) will be needed.
@@ -20,6 +22,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
   * `lacos_spec.cl` : L.A.Cosmic task definition
 * Before beginning, you have to check all the observation log files from [Gemini Data Archive](https://archive.gemini.edu/searchform). If there are some problematic data files (due to **_low counts_** or **_saturation_**), you should remove them from `./raw/` directory or move them to other paths.
 * [DS9](https://sites.google.com/cfa.harvard.edu/saoimageds9) will be needed for visual inspection of each FITS file.
+* For the data from GMOS-N, [mk_extinct.txt](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/_downloads/mk_extinct.txt) ([Buton+13](https://www.aanda.org/articles/aa/pdf/2013/01/aa19834-12.pdf), [Atmospheric extinction properties above Mauna Kea: J/A+A/549/A8](https://cdsarc.unistra.fr/viz-bin/cat/J/A+A/549/A8)) is required for atmospheric extinction correction.
 
 ## Subdirectories
 * `./analysis/` : An analysis directory of the processed GMOS/IFU data
