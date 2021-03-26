@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2021. 3. 25.)
+(updated on 2021. 3. 26.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
@@ -99,6 +99,8 @@ $ ipython
 (Python 2.7)
 > run mk_bias.py
 ```
+
+Instead of ``ipython``, ``pyraf --ipython`` also works fine (sometimes more convenient for checking the parameters of IRAF/Gemini tasks).
 
 After running this code, please check if ``Mbias.fits`` is created well in `./calibrations/`.
 * Running time: ~240 sec (for 15 raw bias files), ~800 sec (for 30 files)
