@@ -24,40 +24,46 @@ lst_flat = 'std_flat.lis'
 
 # Slit mode of IFU
 nslit = 2
+cslit = 'both'
+'''
+Slit mode for IFU
+IFU-2 slit: cslit = 'both'
+IFU-1 slit: cslit = 'red' / 'blue'
+'''
 
 
 # ----- Find star w/ iraf.dir('onedstds') ----- #
 ## Absolute path: ~/[anaconda home directory]/envs/iraf27/iraf/noao/lib/onedstds/
-## Check the standard star name from the header of the raw image
+## Check the standard star name from the header of the raw image (extension: 0, keyword: 'OBJECT')
 ## $ find . -name *[standard starname]*
 
 
-starname = 'gd108'
+starname = 'wolf1346'
 '''
 Standard star name
 exact name of [starname].dat
 '''
 
-stardir = 'onedstds$oke1990/'
+stardir = 'onedstds$spec50cal/'
 '''
 Directory name of standard star data file
 'onedstds$[subdirectory]/'
 '''
 
-extinction = 'onedstds$ctioextinct.dat'
+extinction = 'mk_extinct.txt'
 '''
 Extinction file name
 GMOS-N: 'mk_extinct.txt' (needed to be downloaded)
 GMOS-S: 'onedstds$ctioextinct.dat'
 '''
 
-root_name = starname+'_700_20190304_'
+root_name = starname+'_700_20190613_'
 '''
 Output file name for sensitivity function
 (i.e. [starname]_[centwave]_[obsdate]_)
 '''
 
-obs_site = 'Gemini-South'
+obs_site = 'Gemini-North'
 '''
 Observing site
 'Gemini-North' or 'Gemini-South'
@@ -65,8 +71,8 @@ Observing site
 
 
 # ----- Check the mdf name w/ iraf.dir('gmos$data/*ifu*.fits', ncols=1) ----- #
-## Absolute path: ~/[anaconda home directory]/envs/geminiconda/iraf_extern/gemini/gmos/data/
-mdf = 'gsifu_slits_mdf_HAM.fits'
+## Absolute path: ~/[anaconda home directory]/envs/iraf27/iraf_extern/gemini/gmos/data/
+mdf = 'gnifu_slits_mdf.fits'
 '''
 Default MDF name
 g[n/s]ifu_[ns]_slit[b/r/s]_mdf_[CCD].fits
