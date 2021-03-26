@@ -40,7 +40,7 @@ iraf.imdelete('g@'+ic.lst_flat)
 iraf.imdelete('rg@'+ic.lst_flat)
 
 flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
-iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.bias,
+iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.caldir+ic.procbias,
 	          fl_over='yes', fl_trim='yes', mdffile=ic.mdf, mdfdir='./',
 	          slits='both', line=1400, fl_fluxcal='no', fl_gscrrej='no',
 	          fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
