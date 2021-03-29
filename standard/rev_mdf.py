@@ -58,7 +58,17 @@ for i in np.arange(N_apr):
 		apr_idx = idx_lines[apr_lines][0]
 		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
 
-		# Revise the MDF database
+		'''
+		The below part is for revising the MDF database interactively.
+		
+		If there is nothing to be revised,
+		# ----- START ----- #
+		g.writelines(apr_info)
+		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+		# ----- END ----- #
+
+		If there are missing fibers to be revised in the MDF database, for example,
+		# ----- START ----- #
 		if (apr_num >= 50):
 			apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
 			apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
@@ -74,8 +84,13 @@ for i in np.arange(N_apr):
 			g.writelines(apr_info)
 		else:
 			g.writelines(apr_info)
+		# ----- END ----- #		
+		'''
 
+		# ----- START ----- #
+		g.writelines(apr_info)
 		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+		# ----- END ----- #
 
 g.close()
 
@@ -98,10 +113,39 @@ if (ic.nslit == 2):
 			apr_idx = idx_lines[apr_lines][0]
 			apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
 
-			# Revise the MDF database
+			'''
+			The below part is for revising the MDF database interactively.
+			
+			If there is nothing to be revised,
+			# ----- START ----- #
 			g.writelines(apr_info)
-
 			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+			# ----- END ----- #
+
+			If there are missing fibers to be revised in the MDF database, for example,
+			# ----- START ----- #
+			if (apr_num >= 50):
+				apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
+				apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
+				apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+1)
+				if ((apr_num == 137) | \
+					(apr_num == 204) | \
+					(apr_num == 449) | \
+					(apr_num == 689) | \
+					(apr_num == 691)):
+					apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+2))
+					apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+2-1], mdfdata['YINST'][apr_num+2-1])+mdfdata['BLOCK'][apr_num+2-1]+'\n'
+					apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+2)
+				g.writelines(apr_info)
+			else:
+				g.writelines(apr_info)
+			# ----- END ----- #		
+			'''
+
+			# ----- START ----- #
+			g.writelines(apr_info)
+			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+			# ----- END ----- #
 
 	g.close()
 
