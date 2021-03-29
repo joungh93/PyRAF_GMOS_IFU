@@ -71,7 +71,7 @@ Extract aperture spectra for erg[FLAT]_1? ('NO')
 
 # Writing aperture file
 if (ic.nslit == 1):
-	apfile = 'aperg'+flat0+'_1'
+	apfile = ['aperg'+flat0+'_1']
 if (ic.nslit == 2):
 	apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
 for i in np.arange(len(apfile)):
