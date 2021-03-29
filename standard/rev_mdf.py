@@ -29,7 +29,10 @@ iraf.unlearn('gfextract')
 
 # ----- Reading database file ----- #
 flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
-apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
+if (ic.nslit == 1):
+	apfile = ['aperg'+flat0+'_1']
+if (ic.nslit == 2):
+	apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
 
 
 # ----- Reading MDF file ----- #
@@ -78,28 +81,29 @@ g.close()
 
 
 # ----- slit-2 ----- #
-f = open(ic.dir_db+apfile[1]+'_old','r')
-dbfile = f.readlines()
-dbfile = np.array(dbfile)
-f.close()
-os.system('rm -rfv '+ic.dir_db+apfile[1])
+if (ic.nslit == 2):
+	f = open(ic.dir_db+apfile[1]+'_old','r')
+	dbfile = f.readlines()
+	dbfile = np.array(dbfile)
+	f.close()
+	os.system('rm -rfv '+ic.dir_db+apfile[1])
 
-g = open(ic.dir_db+apfile[1],'w')
-N_apr = 750
-idx_lines = np.arange(len(dbfile))
-for i in np.arange(N_apr):
-	apr_num = 750+i+1
-	apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
-	if (np.sum(apr_lines) == 1):
-		apr_idx = idx_lines[apr_lines][0]
-		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
+	g = open(ic.dir_db+apfile[1],'w')
+	N_apr = 750
+	idx_lines = np.arange(len(dbfile))
+	for i in np.arange(N_apr):
+		apr_num = 750+i+1
+		apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
+		if (np.sum(apr_lines) == 1):
+			apr_idx = idx_lines[apr_lines][0]
+			apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
 
-		# Revise the MDF database
-		g.writelines(apr_info)
+			# Revise the MDF database
+			g.writelines(apr_info)
 
-		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
 
-g.close()
+	g.close()
 
 
 # ----- Overwriting new MDF file ----- #
