@@ -16,7 +16,7 @@ from astropy.io import fits
 
 # ----- Importing IRAF from the root directory ----- #
 current_dir = os.getcwd()
-os.chdir('../')
+os.chdir(ic.dir_iraf)
 
 from pyraf import iraf
 from pyraf.iraf import gemini, gmos
