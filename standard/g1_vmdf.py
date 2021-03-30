@@ -52,8 +52,10 @@ iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400)
 Extracting slit 1
 Find apertures for erg[FLAT]_1? ('yes')
 Edit apertures for erg[FLAT]_1? ('yes')
-(IRAF graphics displaying... please check the fibers visually.)
-"q"
+(IRAF interactive graphics displaying... please check the fibers visually.)
+- "w" + "a" (left bottom) + "a" (right top) : zoom-in
+- "w" + "e" : zoom-out
+- "q" : quitting the interactive task
 Trace apertures for erg[FLAT]_1? ('yes')
 Fit traced positions for erg[FLAT]_1 interactively? ('NO')
 Write apertures for erg[FLAT]_1 to database ('yes')
