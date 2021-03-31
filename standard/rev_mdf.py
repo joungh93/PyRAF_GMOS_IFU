@@ -56,7 +56,8 @@ for i in np.arange(N_apr):
 	apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
 	if (np.sum(apr_lines) == 1):
 		apr_idx = idx_lines[apr_lines][0]
-		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
+		n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
 		'''
 		The below part is for revising the MDF database interactively.
@@ -84,13 +85,17 @@ for i in np.arange(N_apr):
 			g.writelines(apr_info)
 		else:
 			g.writelines(apr_info)
+		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
 		# ----- END ----- #		
 		'''
 
 		# ----- START ----- #
-		g.writelines(apr_info)
-		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
-		# ----- END ----- #
+		if (apr_num == 200):
+			continue
+		else:
+			g.writelines(apr_info)
+			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+		# ----- END ----- #		
 
 g.close()
 
@@ -111,7 +116,8 @@ if (ic.nslit == 2):
 		apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
 		if (np.sum(apr_lines) == 1):
 			apr_idx = idx_lines[apr_lines][0]
-			apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
+			n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+			apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
 			'''
 			The below part is for revising the MDF database interactively.
@@ -139,6 +145,7 @@ if (ic.nslit == 2):
 				g.writelines(apr_info)
 			else:
 				g.writelines(apr_info)
+			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
 			# ----- END ----- #		
 			'''
 
@@ -167,5 +174,39 @@ hdul.writeto(ic.nmdf, overwrite=True)
 
 # Verify the MDF again
 flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
+if (ic.nslit == 1):
+	eslit = ic.cslit
+if (ic.nslit == 2):
+	eslit = '*'
 iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400)
+iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400, exslits=eslit)
+'''
+----- Interactive task after gfextract -----
+Extracting slit 1
+Recenter apertures for erg[FLAT]_1? ('yes')
+Edit apertures for erg[FLAT]_1? ('yes')
+(IRAF graphics displaying... please check the fibers visually.)
+- "w" + "e" (left bottom) + "e" (right top) : zoom-in
+- "w" + "a" : zoom-out
+- "q" : quitting the interactive task
+
+1) If unsatisfied,
+
+Ctrl+C and revise this code again.
+
+2) If satisfied with the MDF trace results,
+
+Trace apertures for erg[FLAT]_1? ('yes')
+Fit traced positions for erg[FLAT]_1 interactively? ('NO')
+Write apertures for erg[FLAT]_1 to database ('yes')
+Extract aperture spectra for erg[FLAT]_1? ('yes' (IFU-2 slit) / 'NO' (IFU-1 slit))
+--> For the IFU-1 slit, this is the end.
+Review extracted spectra from erg[FLAT]_1? ('NO')
+
+Extracting slit 2
+Find apertures for erg[FLAT]_2? ('yes')
+(...repeating the tasks for slit 2...)
+Extract aperture spectra for erg[FLAT]_1? ('NO')
+
+--> 'GFEXTRACT exit status: error' message will appear, but it is not a fault.
+'''
