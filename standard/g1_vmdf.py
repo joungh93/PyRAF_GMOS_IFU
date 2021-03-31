@@ -45,17 +45,19 @@ iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.caldir+ic.procb
 	          slits=ic.cslit, line=1400, fl_fluxcal='no', fl_gscrrej='no',
 	          fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
 
+if (ic.nslit == 1):
+	eslit = ic.cslit
+if (ic.nslit == 2):
+	eslit = '*'
 iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400)
+iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400, exslits=eslit)
 '''
 ----- Interactive task after gfextract -----
 Extracting slit 1
 Find apertures for erg[FLAT]_1? ('yes')
 Edit apertures for erg[FLAT]_1? ('yes')
-(IRAF interactive graphics displaying... please check the fibers visually.)
-- "w" + "e" (left bottom) + "e" (right top) : zoom-in
-- "w" + "a" : zoom-out
-- "q" : quitting the interactive task
+(IRAF graphics displaying... please check the fibers visually.)
+"q"
 Trace apertures for erg[FLAT]_1? ('yes')
 Fit traced positions for erg[FLAT]_1 interactively? ('NO')
 Write apertures for erg[FLAT]_1 to database ('yes')
