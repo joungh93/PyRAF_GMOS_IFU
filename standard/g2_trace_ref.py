@@ -61,7 +61,7 @@ if (ic.nslit == 2):
 	vkw = '*'
 os.system('ds9 &')
 iraf.sleep(5.0)
-iraf.gfdisplay('erg'+flat, 1, version=vkw)
+iraf.gfdisplay('erg'+flat0, 1, version=vkw)
 
 
 # Printing the running time
