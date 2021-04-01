@@ -37,7 +37,11 @@ iraf.unlearn('gfextract')
 
 
 # ----- Reading database file ----- #
-flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
+flat = np.loadtxt(ic.lst_flat, dtype=str)
+if (flat.size > 1):
+	raise ValueError("Please check if there is only one flat image for the standard star.")
+flat0 = flat.item(0)
+
 if (ic.nslit == 1):
 	apfile = ['aperg'+flat0+'_1']
 if (ic.nslit == 2):
