@@ -45,10 +45,13 @@ os.system('rm -rfv '+ic.dir_db+' *.fits tmp*')
 iraf.copy('gmos$data/'+ic.mdf, '.', verbose='no')
 
 # Extract a flat
+flat = np.loadtxt(ic.lst_flat, dtype=str)
+if (flat.size > 1):
+	raise ValueError("Please check if there is only one flat image for the standard star.")
+flat0 = flat.item(0)
+
 iraf.imdelete('g@'+ic.lst_flat)
 iraf.imdelete('rg@'+ic.lst_flat)
-
-flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
 iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.caldir+ic.procbias,
 	          fl_over='yes', fl_trim='yes', mdffile=ic.mdf, mdfdir='./',
 	          slits=ic.cslit, line=pk_line, fl_fluxcal='no', fl_gscrrej='no',
