@@ -26,9 +26,19 @@ lst_flat = 'std_flat.lis'
 nslit = 2
 cslit = 'both'
 '''
-Slit mode for IFU
-IFU-2 slit: cslit = 'both'
+Slit mode for IFU (as an input parameter of gfreduce)
 IFU-1 slit: cslit = 'red' / 'blue'
+IFU-2 slit: cslit = 'both'
+'''
+
+if (nslit == 1):
+	eslit = cslit
+if (nslit == 2):
+	eslit = '*'
+'''
+Slit mode for IFU (as an input parameter of gfextract)
+IFU-1 slit: eslit = 'red' / 'blue'
+IFU-2 slit: eslit = '*'
 '''
 
 
