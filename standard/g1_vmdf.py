@@ -15,6 +15,15 @@ import glob, os
 import g0_init_cfg as ic
 
 
+# ----- Line number (to be revised!) ----- #
+pk_line = 1400
+'''
+Line for finding peaks (gfreduce)
+Line/column for finding apertures (gfextract)
+'''
+# ---------------------------------------- #
+
+
 # ----- Importing IRAF from the root directory ----- #
 current_dir = os.getcwd()
 os.chdir(ic.dir_iraf)
@@ -42,15 +51,11 @@ iraf.imdelete('rg@'+ic.lst_flat)
 flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
 iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.caldir+ic.procbias,
 	          fl_over='yes', fl_trim='yes', mdffile=ic.mdf, mdfdir='./',
-	          slits=ic.cslit, line=1400, fl_fluxcal='no', fl_gscrrej='no',
+	          slits=ic.cslit, line=pk_line, fl_fluxcal='no', fl_gscrrej='no',
 	          fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
 
-if (ic.nslit == 1):
-	eslit = ic.cslit
-if (ic.nslit == 2):
-	eslit = '*'
 iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400, exslits=eslit)
+iraf.gfextract('rg'+flat0, fl_inter='yes', line=pk_line, exslits=ic.eslit)
 '''
 ----- Interactive task after gfextract -----
 Extracting slit 1
