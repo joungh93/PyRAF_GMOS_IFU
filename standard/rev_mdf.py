@@ -14,6 +14,15 @@ import g0_init_cfg as ic
 from astropy.io import fits
 
 
+# ----- Line number (to be revised!) ----- #
+pk_line = 1400
+'''
+Line for finding peaks (gfreduce)
+Line/column for finding apertures (gfextract)
+'''
+# ---------------------------------------- #
+
+
 # ----- Importing IRAF from the root directory ----- #
 current_dir = os.getcwd()
 os.chdir(ic.dir_iraf)
@@ -179,7 +188,7 @@ if (ic.nslit == 1):
 if (ic.nslit == 2):
 	eslit = '*'
 iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400, exslits=eslit)
+iraf.gfextract('rg'+flat0, fl_inter='yes', line=pk_line, exslits=eslit)
 '''
 ----- Interactive task after gfextract -----
 Extracting slit 1
