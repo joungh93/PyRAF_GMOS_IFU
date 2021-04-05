@@ -12,11 +12,13 @@ import glob, os
 
 
 # ----- Directory & file name & basic setting ----- #
+cpath = os.path.abspath(".")
+dir_iraf = "/".join(cpath.split("/")[:-1])+"/"
+rawdir = dir_iraf+"raw/"
+caldir = dir_iraf+"calibrations/"
+dir_db = cpath+"/"+"database/"
+
 procbias = 'Mbias.fits'
-rawdir = '../raw/'
-caldir = '../calibrations/'
-dir_iraf = '../'
-dir_db = 'database/'
 
 lst_std = 'std.lis'
 lst_arc = 'std_arc.lis'
