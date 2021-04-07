@@ -21,7 +21,7 @@ $ ipython
 ```
 
 ### Verify the MDF
-Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. For the detailed process, please refer to the comment written in the codes.
+Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here. _*For the detailed process, please refer to those comments in the codes.*_
 
 ```
 > run g1_vmdf.py
