@@ -35,6 +35,11 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * `./standard/` : A reduction directory for standard star data
 
 ## Workflow
+
+* A brief summary of the entire workflow of GMOS/IFU data reduction :point_down:
+![GMOS_IFU_workflows_summary](./GMOS_IFU_workflows_summary.png)
+
+
 ### 1) Initial data check using SQL and DS9
 ```
 cd raw/
@@ -88,45 +93,3 @@ $ ipython
 ```
 
 ``init_info.py`` writes a text file with all the information of raw data, and ``mk_list.py`` makes the basic structures of directories for the reduction process.
-
-### 3) Creating master bias
-You need to switch your Python environment to Python 2 for using [astroconda (with IRAF)](https://astroconda.readthedocs.io/en/latest/installation.html#legacy-software-stack-with-iraf) hereafter.
-
-```
-$ cd bias/
-$ conda activiate iraf27 
-$ ipython
-(Python 2.7)
-> run mk_bias.py
-```
-
-Instead of ``ipython``, ``pyraf --ipython`` also works fine (sometimes more convenient for checking the parameters of IRAF/Gemini tasks).
-
-After running this code, please check if ``Mbias.fits`` is created well in `./calibrations/`.
-* Running time: ~240 sec (for 15 raw bias files), ~800 sec (for 30 files)
-
-### 4) Standard star reduction
-Now move to the directory with standard star data, and check all the list files (`std*.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode.
-
-```
-$ cd standard/
-$ cat std[*].lis
-$ vi g0_init_cfg.py
-(Revising)
-
-$ ipython
-(Python 2.7)
-```
-
-#### Verify the MDF
-Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. For the detailed process, please refer to the comment written in the codes.
-
-```
-> run g1_vmdf.py
-> run rev_mdf.py
-```
-
-
-![GMOS_IFU_workflows_summary](./GMOS_IFU_workflows_summary.png)
-
-
