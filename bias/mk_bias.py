@@ -15,13 +15,14 @@ import glob, os
 
 
 # ----- File name & directory ----- #
-lst_bias = 'bias.lis'
-procbias = 'Mbias.fits'
-rawdir = '../raw/'
-caldir = '../calibrations/'
+cpath = os.path.abspath(".")
+dir_iraf = "/".join(cpath.split("/")[:-1])+"/"
+rawdir = dir_iraf+"raw/"
+caldir = dir_iraf+"calibrations/"
 if (glob.glob(caldir) == []):
 	os.mkdir(caldir)
-dir_iraf = '../'
+lst_bias = 'bias.lis'
+procbias = 'Mbias.fits'
 
 
 # ----- Importing IRAF from the root directory ----- #
