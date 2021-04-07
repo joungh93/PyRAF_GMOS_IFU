@@ -127,6 +127,6 @@ Two Python codes are involved in this step. You have to revise `rev_mdf.py` manu
 ```
 
 
-
+![GMOS_IFU_workflows_summary](./GMOS_IFU_workflows_summary.pdf)
 
 
