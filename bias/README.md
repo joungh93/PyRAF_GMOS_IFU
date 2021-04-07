@@ -18,3 +18,5 @@ $ ipython
 
 After running this code, please check if ``Mbias.fits`` is created well in `./calibrations/`.
 * Running time: ~240 sec (for 15 raw bias files), ~800 sec (for 30 files)
+
+:smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
