@@ -267,7 +267,8 @@ class linefit:
         return return_value
 
 
-    def solve(self, ibin, check=False, nwalkers=64, ndiscard=5000, nsample=5000, fluct=1.0e-3):
+    def solve(self, ibin, check=False, nwalkers=64, ndiscard=5000, nsample=5000,
+              fluct0=1.0e-3, fluct1=1.0e-3, fluct2=1.0e-3):
         ndim = 2*self.nlines+1
 
         # Initial settings
@@ -291,15 +292,15 @@ class linefit:
         pos = np.zeros((nwalkers, ndim))
         np.random.seed(0)
         pos[:,0] = truncnorm.rvs(self.lsig_llim, self.lsig_ulim,
-                                 loc=initial[0], scale=fluct, size=nwalkers)
+                                 loc=initial[0], scale=fluct0, size=nwalkers)
 
         for i in np.arange(1, ndim, 1):
             if (i % 2 == 1):
                 pos[:,i] = truncnorm.rvs(self.wav_fit[0], self.wav_fit[1],
-                                         loc=initial[i], scale=fluct, size=nwalkers)
+                                         loc=initial[i], scale=fluct1, size=nwalkers)
             elif (i % 2 == 0):
                 pos[:,i] = truncnorm.rvs(0., 2.0*spec_sum,
-                                         loc=initial[i], scale=fluct, size=nwalkers)
+                                         loc=initial[i], scale=fluct2, size=nwalkers)
         # print(pos)
 
         # pos = soln.x + fluct*np.random.randn(nwalkers, ndim)
@@ -440,7 +441,8 @@ if (__name__ == '__main__'):
     # print(l2.log_prior(theta2, ibin))
 
     df3 = l3.solve(ibin, check=True, nwalkers=32,
-                   ndiscard=1000, nsample=1000, fluct=5.0e-5)
+                   ndiscard=1000, nsample=1000,
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
     theta3 = df3.values[0, 5]
     for ln in np.arange(l3.nlines):
         theta3 = np.append(theta3, df3.values[ln, 1:10:8])
