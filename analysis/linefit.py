@@ -426,31 +426,34 @@ if (__name__ == '__main__'):
 
     ibin = 88
 
-    # df1 = l1.solve(ibin, check=True, nwalkers=32,
-    #                ndiscard=1000, nsample=1000, fluct=1.0e-5)
-    # theta1 = df1.values[0, 5]
-    # for ln in np.arange(l1.nlines):
-    #     theta1 = np.append(theta1, df1.values[ln, 1:10:8])
-    # print(l1.log_prior(theta1, ibin))
+    df1 = l1.solve(ibin, check=True, nwalkers=32,
+                   ndiscard=1000, nsample=1000,
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+    theta1 = df1.values[0, 5]
+    for ln in np.arange(l1.nlines):
+        theta1 = np.append(theta1, df1.values[ln, 1:10:8])
+    print(l1.log_prior(theta1, ibin))
 
-    # df2 = l2.solve(ibin, check=True, nwalkers=32,
-    #                ndiscard=1000, nsample=1000, fluct=1.0e-5)
-    # theta2 = df2.values[0, 5]
-    # for ln in np.arange(l2.nlines):
-    #     theta2 = np.append(theta2, df2.values[ln, 1:10:8])
-    # print(l2.log_prior(theta2, ibin))
+    df2 = l2.solve(ibin, check=True, nwalkers=32,
+                   ndiscard=1000, nsample=1000,
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+    theta2 = df2.values[0, 5]
+    for ln in np.arange(l2.nlines):
+        theta2 = np.append(theta2, df2.values[ln, 1:10:8])
+    print(l2.log_prior(theta2, ibin))
 
     df3 = l3.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-5)
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
     theta3 = df3.values[0, 5]
     for ln in np.arange(l3.nlines):
         theta3 = np.append(theta3, df3.values[ln, 1:10:8])
     print(l3.log_prior(theta3, ibin))
 
-    # df4 = l4.solve(ibin, check=True, nwalkers=32,
-    #                ndiscard=1000, nsample=1000, fluct=1.0e-5)
-    # theta4 = df4.values[0, 5]
-    # for ln in np.arange(l4.nlines):
-    #     theta4 = np.append(theta4, df4.values[ln, 1:10:8])
-    # print(l4.log_prior(theta4, ibin))
+    df4 = l4.solve(ibin, check=True, nwalkers=32,
+                   ndiscard=1000, nsample=1000,
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+    theta4 = df4.values[0, 5]
+    for ln in np.arange(l4.nlines):
+        theta4 = np.append(theta4, df4.values[ln, 1:10:8])
+    print(l4.log_prior(theta4, ibin))
