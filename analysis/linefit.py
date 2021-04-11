@@ -428,7 +428,7 @@ if (__name__ == '__main__'):
 
     df1 = l1.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
     theta1 = df1.values[0, 5]
     for ln in np.arange(l1.nlines):
         theta1 = np.append(theta1, df1.values[ln, 1:10:8])
@@ -436,7 +436,7 @@ if (__name__ == '__main__'):
 
     df2 = l2.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
     theta2 = df2.values[0, 5]
     for ln in np.arange(l2.nlines):
         theta2 = np.append(theta2, df2.values[ln, 1:10:8])
@@ -444,7 +444,7 @@ if (__name__ == '__main__'):
 
     df3 = l3.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
     theta3 = df3.values[0, 5]
     for ln in np.arange(l3.nlines):
         theta3 = np.append(theta3, df3.values[ln, 1:10:8])
@@ -452,7 +452,7 @@ if (__name__ == '__main__'):
 
     df4 = l4.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
     theta4 = df4.values[0, 5]
     for ln in np.arange(l4.nlines):
         theta4 = np.append(theta4, df4.values[ln, 1:10:8])
