@@ -424,7 +424,7 @@ if (__name__ == '__main__'):
     l3 = linefit(vb['wav'], vb['sci'], vb['var'], 3, redshift)
     l4 = linefit(vb['wav'], vb['sci'], vb['var'], 4, redshift)
 
-    ibin = 91
+    ibin = 88
 
     # df1 = l1.solve(ibin, check=True, nwalkers=32,
     #                ndiscard=1000, nsample=1000, fluct=1.0e-5)
@@ -442,7 +442,7 @@ if (__name__ == '__main__'):
 
     df3 = l3.solve(ibin, check=True, nwalkers=32,
                    ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
+                   fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-5)
     theta3 = df3.values[0, 5]
     for ln in np.arange(l3.nlines):
         theta3 = np.append(theta3, df3.values[ln, 1:10:8])
