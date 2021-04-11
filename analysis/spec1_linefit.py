@@ -51,7 +51,7 @@ for num_line in [3]:#[1, 2, 3, 4]:
 	for ibin in np.arange(nvbin):
 		df = l.solve(ibin, check=True, nwalkers=32,
 			         ndiscard=1000, nsample=1000,
-			         fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-5)
+			         fluct0=1.0e-4, fluct1=1.0e-5, fluct2=1.0e-4)
 		
 		if (ibin == 0):
 			rchisq0 = np.array([])
