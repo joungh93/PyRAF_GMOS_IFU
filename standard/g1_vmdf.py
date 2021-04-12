@@ -65,7 +65,10 @@ Extracting slit 1
 Find apertures for erg[FLAT]_1? ('yes')
 Edit apertures for erg[FLAT]_1? ('yes')
 (IRAF graphics displaying... please check the fibers visually.)
-"q"
+- "w" + "e" (left bottom) + "e" (right top) : zoom-in
+- "w" + "a" : zoom-out
+- "q" : quitting the interactive task
+
 Trace apertures for erg[FLAT]_1? ('yes')
 Fit traced positions for erg[FLAT]_1 interactively? ('NO')
 Write apertures for erg[FLAT]_1 to database ('yes')
