@@ -15,6 +15,15 @@ import glob, os
 import g0_init_cfg as ic
 
 
+# ----- Line number (to be revised!) ----- #
+pk_line = 1400
+'''
+Line for finding peaks (gfreduce)
+Line/column for finding apertures (gfextract)
+'''
+# ---------------------------------------- #
+
+
 # ----- Importing IRAF from the root directory ----- #
 current_dir = os.getcwd()
 os.chdir(ic.dir_iraf)
@@ -36,22 +45,27 @@ iraf.imdelete('g@'+ic.lst_std)
 iraf.imdelete('rg@'+ic.lst_std)
 
 iraf.gfreduce('@'+ic.lst_std, rawpath=ic.rawdir, fl_extract='no',
-	            bias=ic.bias, fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
-              slits='both', line=1400, fl_fluxcal='no', fl_gscrrej='no',
+	          bias=ic.caldir+ic.procbias, fl_over='yes', fl_trim='yes',
+	          mdffile=ic.nmdf, mdfdir='./',
+              slits=ic.cslit, line=pk_line, fl_fluxcal='no', fl_gscrrej='no',
               fl_wavtran='no', fl_skysub='no', fl_vardq='yes', fl_inter='no')
 
 
 # Scattered light
-blkmsk_ref = 'newblkmask_S20190228S0015_hdr01'
+blkmsk = np.loadtxt("blkmask_name.txt", dtype=str).item(0)
+blkmsk0 = blkmsk
 
 iraf.imdelete('brg@'+ic.lst_std)
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gfscatsub('rg'+std, blkmsk_ref, outimage='', prefix='b',
-                   xorder='3,3,3,3,3,3,3,3,3,3,3,3',
-                   yorder='3,3,3,3,3,3,3,3,3,3,3,3',
-                   cross='yes', fl_inter='no')
+std = np.loadtxt(ic.lst_std, dtype=str)
+if (std.size > 1):
+    raise ValueError("Please check if there is only one image for the standard star.")
+std0 = std.item(0)
+
+iraf.gfscatsub('rg'+std0, blkmsk0, outimage='', prefix='b',
+               xorder='3,3,3,3,3,3,3,3,3,3,3,3',
+               yorder='3,3,3,3,3,3,3,3,3,3,3,3',
+               cross='yes', fl_inter='no')
 
 # os.system('ds9 &')
 # iraf.sleep(5.0)
