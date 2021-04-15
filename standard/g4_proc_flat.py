@@ -91,12 +91,11 @@ iraf.gfdisplay('eqbrg'+flat0, 1, version=vkw)
 
 
 # ---------- Response function ---------- #
-for flat in iraf.type(ic.lst_flat, Stdout=1):
-    flat = flat.strip()
-    iraf.imdelete(flat0+'_resp')
-    iraf.gfresponse('eqbrg'+flat0, outimage=flat0+'_resp', sky='', 
-    	            order=45, func='spline3', sample='*', 
-    	            fl_fit='yes', fl_inter='no')
+iraf.imdelete(flat0+'_resp')
+iraf.gfresponse('eqbrg'+flat0, outimage=flat0+'_resp', sky='', 
+	            order=45, func='spline3', sample='*', 
+	            fl_fit='yes', fl_inter='no')
+
 
 # os.system('ds9 &')
 # iraf.sleep(5.0)
