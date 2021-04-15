@@ -93,3 +93,12 @@ $ ipython
 ```
 
 ``init_info.py`` writes a text file with all the information of raw data, and ``mk_list.py`` makes the basic structures of directories for the reduction process.
+
+### 3) Setting ``astroconda`` environment for running PyRAF
+```
+$ conda activate iraf27
+$ ipython
+(Python 2.7)
+```
+
+After activating the ``astroconda`` environment (Python 2), you can process raw data with the order of `bias` - `standard` - `redux`.
