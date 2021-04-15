@@ -31,12 +31,15 @@ iraf.unlearn('gemcrspec')
 # ---------- Cosmic ray rejection ---------- #
 iraf.imdelete('xbrg@'+ic.lst_std)
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gemcrspec('brg'+std, 'xbrg'+std, logfile='crrej.log',
-                   key_gain='GAIN', key_ron='RDNOISE', xorder=9,
-                   yorder=-1, sigclip=4.5, sigfrac=0.5, objlim=1.,
-                   niter=4, verbose='yes', fl_vardq='yes')
+std = np.loadtxt(ic.lst_std, dtype=str)
+if (std.size > 1):
+    raise ValueError("Please check if there is only one image for the standard star.")
+std0 = std.item(0)
+
+iraf.gemcrspec('brg'+std0, 'xbrg'+std0, logfile='crrej.log',
+               key_gain='GAIN', key_ron='RDNOISE', xorder=9,
+               yorder=-1, sigclip=4.5, sigfrac=0.5, objlim=1.,
+               niter=4, verbose='yes', fl_vardq='yes')
 
 # os.system('ds9 &')
 # iraf.sleep(5.0)
