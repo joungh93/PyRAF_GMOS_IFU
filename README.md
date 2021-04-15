@@ -101,4 +101,4 @@ $ ipython
 (Python 2.7)
 ```
 
-After activating the ``astroconda`` environment (Python 2), you can process raw data with the order of `bias` - `standard` - `redux`.
+After activating the ``astroconda`` environment (Python 2), you can process raw data with the order of `bias` - `standard` - `redux`. It is also useful to activate the environment with ``pyraf --ipython``. This is particularly convenient to check input parameters of PyRAF tasks.
