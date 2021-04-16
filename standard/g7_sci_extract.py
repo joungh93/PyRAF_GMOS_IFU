@@ -13,6 +13,7 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import g0_init_cfg as ic
+from astropy.io import fits
 
 
 # ----- Line number (to be revised!) ----- #
@@ -73,6 +74,20 @@ if (ic.nslit == 2):
 os.system('ds9 &')
 iraf.sleep(5.0)
 iraf.gfdisplay('eqxbrg'+std0, 1, version=vkw)
+
+
+# ----- Displaying the extracted data for checking bad columns ----- #
+fits.open('eqxbrg'+std0+'.fits').info()
+# 2-slit mode
+dt1, hd1 = fits.getdata('eqxbrg'+std0+'.fits', ext=2, header=True)
+if (ic.nslit == 2):
+	dt2, hd2 = fits.getdata('eqxbrg'+std0+'.fits', ext=5, header=True)
+
+os.system('ds9 &')
+iraf.sleep(5.0)
+iraf.display(image = 'eqxbrg'+std0+'.fits[sci,1]', frame=1)
+if (ic.nslit == 2):
+	iraf.display(image = 'eqxbrg'+std0+'.fits[sci,2]', frame=2)
 
 
 # Printing the running time
