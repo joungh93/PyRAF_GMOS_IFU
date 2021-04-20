@@ -1306,15 +1306,18 @@ np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
 
 
 # ----- Applying NebulaBayes ----- #
+import NebulaBayes 
+dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
 from NebulaBayes import NB_Model
 
 # These HII-region optical emission-line fluxes have already been dereddened
 linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
 linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
-df_ll = pd.read_csv("/home/jlee/anaconda3/lib/python3.7/site-packages/NebulaBayes/grids/Linelist.csv")
 
-
-wavelengths = [4862.68, 5008.24, 6564.61, 6585.27, 6718.29, 6732.67]
+df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
+wavelengths = []
+for l in linelist_NBinput:
+	wavelengths.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
 
 # Set outputs:
 OUT_DIR = "NB_HII"
@@ -1326,7 +1329,10 @@ else:
 # Initialise the NB_Model, which loads and interpolates the model flux grids:
 NB_Model_HII = NB_Model("HII", line_list=linelist_NBinput)
 
-for i in np.arange(1):#np.arange(nvbin):
+NB_logOH_2D = np.zeros_like(Halpha_flux_2D)
+NB_logU_2D = np.zeros_like(Halpha_flux_2D)
+for i in np.arange(nvbin):
+	print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
 	obs_fluxes, obs_errs = [], []
 	for l in linelist_GEMname:
 		exec("fl = "+l+"_flux_2D[data_vbin == i]")
@@ -1346,18 +1352,22 @@ for i in np.arange(1):#np.arange(nvbin):
 
 	Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
 	Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
-	print("\nParameter estimate table:")
-	print(Estimate_table)
+	# print("\nParameter estimate table:")
+	# print(Estimate_table)
 	logOH_est = Estimate_table.loc["12 + log O/H", "Estimate"]
 	logOH_low = Estimate_table.loc["12 + log O/H", "CI68_low"]
 	logOH_high = Estimate_table.loc["12 + log O/H", "CI68_high"]
 	logOH_errs = (logOH_est - logOH_low, logOH_high - logOH_est)
-	print("\nThe measured oxygen abundance is 12 + log O/H = "
-	      "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logOH_est, *logOH_errs))
+	logU_est = Estimate_table.loc["log U", "Estimate"]
+	# print("\nThe measured oxygen abundance is 12 + log O/H = "
+	#       "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logOH_est, *logOH_errs))
 
-	best_model_dict = Result_HII.Posterior.best_model
-	print("\nBest model table:")
-	print(best_model_dict["table"])  # pandas DataFrame
+	# best_model_dict = Result_HII.Posterior.best_model
+	# print("\nBest model table:")
+	# print(best_model_dict["table"])  # pandas DataFrame
+
+	NB_logOH_2D[data_vbin == i] = logOH_est
+	NB_logU_2D[data_vbin == i] = logU_est
 
 
 # Printing the running time
