@@ -1304,35 +1304,60 @@ plt.close()
 # ----- Saving the results ----- #
 np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
 
-'''
+
 # ----- Applying NebulaBayes ----- #
+from NebulaBayes import NB_Model
 
 # These HII-region optical emission-line fluxes have already been dereddened
-linelist = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
-obs_fluxes = [8.151, 4.634, 1.999, 0.09562, 13.21, 5.116, 1.377, 1.249]
-obs_errs = [0.09008, 0.04013, 0.01888, 0.00222, 0.07635, 0.03159, 0.00999,
-            0.00923]
-# Fluxes/errors will be normalised to the flux of the default norm_line, Hbeta
-# The emission line names match those in the grid (see the NebulaBayes/grids
-# directory)
+linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
+linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
+df_ll = pd.read_csv("/home/jlee/anaconda3/lib/python3.7/site-packages/NebulaBayes/grids/Linelist.csv")
 
-# Initialise the NB_Model, which loads and interpolates the model flux grids:
-NB_Model_HII = NB_Model("HII", line_list=linelist)
+
+wavelengths = [4862.68, 5008.24, 6564.61, 6585.27, 6718.29, 6732.67]
 
 # Set outputs:
-kwargs = {"prior_plot": os.path.join(OUT_DIR, "1_HII_prior_plot.pdf"),
-          "likelihood_plot": os.path.join(OUT_DIR, "1_HII_likelihood_plot.pdf"),
-          "posterior_plot": os.path.join(OUT_DIR, "1_HII_posterior_plot.pdf"),
-          "estimate_table": os.path.join(OUT_DIR, "1_HII_param_estimates.csv"),
-          "best_model_table": os.path.join(OUT_DIR, "1_HII_best_model.csv"),
-          }
+OUT_DIR = "NB_HII"
+if (glob.glob(OUT_DIR) == []):
+	os.system("mkdir "+OUT_DIR)
+else:
+	os.system("rm -rfv "+OUT_DIR+"/*")
 
-# Run parameter estimation once
-Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist, **kwargs)
-# NB_Model_HII may be called repeatedly to do Bayesian parameter estimation
-# on different sets of observed fluxes with the same grid.
-'''
+# Initialise the NB_Model, which loads and interpolates the model flux grids:
+NB_Model_HII = NB_Model("HII", line_list=linelist_NBinput)
 
+for i in np.arange(1):#np.arange(nvbin):
+	obs_fluxes, obs_errs = [], []
+	for l in linelist_GEMname:
+		exec("fl = "+l+"_flux_2D[data_vbin == i]")
+		exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
+		obs_fluxes.append(np.unique(fl)[0])
+		obs_errs.append(np.unique(e_fl)[0])
+
+	kwargs = {"norm_line": "Hbeta",
+              "deredden": True,
+              "obs_wavelengths": wavelengths,
+              "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
+              "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
+              "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
+              "estimate_table": os.path.join(OUT_DIR, f"1_HII_param_estimates_bin{i:d}.csv"),
+              "best_model_table": os.path.join(OUT_DIR, f"1_HII_best_model_bin{i:d}.csv"),
+              }
+
+	Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
+	Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
+	print("\nParameter estimate table:")
+	print(Estimate_table)
+	logOH_est = Estimate_table.loc["12 + log O/H", "Estimate"]
+	logOH_low = Estimate_table.loc["12 + log O/H", "CI68_low"]
+	logOH_high = Estimate_table.loc["12 + log O/H", "CI68_high"]
+	logOH_errs = (logOH_est - logOH_low, logOH_high - logOH_est)
+	print("\nThe measured oxygen abundance is 12 + log O/H = "
+	      "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logOH_est, *logOH_errs))
+
+	best_model_dict = Result_HII.Posterior.best_model
+	print("\nBest model table:")
+	print(best_model_dict["table"])  # pandas DataFrame
 
 
 # Printing the running time
