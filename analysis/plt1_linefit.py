@@ -705,7 +705,7 @@ for axis in ['top','bottom','left','right']:
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=8.2, vmax=8.6, 
+               vmin=7.8, vmax=9.0, 
                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -861,7 +861,7 @@ for axis in ['top','bottom','left','right']:
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=8.2, vmax=8.6, 
+               vmin=7.8, vmax=9.0, 
                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -1315,9 +1315,9 @@ linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII673
 linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
 
 df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
-wavelengths = []
+wavlist_NBinput = []
 for l in linelist_NBinput:
-    wavelengths.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
+    wavlist_NBinput.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
 
 # Set outputs:
 OUT_DIR = "NB_HII"
@@ -1342,7 +1342,7 @@ for i in np.arange(nvbin):
 
     kwargs = {"norm_line": "Hbeta",
               "deredden": True,
-              "obs_wavelengths": wavelengths,
+              "obs_wavelengths": wavlist_NBinput,
               "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
               "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
               "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
@@ -1372,6 +1372,120 @@ for i in np.arange(nvbin):
     
     except ValueError:
         continue
+
+
+# ----- START: Oxygen abundance map (3) ----- #
+plt_Data = copy.deepcopy(NB_logOH_2D)
+plt_Data[plt_Data == 0] = np.nan
+
+fig, ax = plt.subplots(1, 1, figsize=(8,5))
+plt.suptitle(r"${\rm 12+log(O/H)}$ map",
+             x=0.5, ha='center', y=0.96, va='top',
+             fontsize=20.0)
+ax.set_xlim([-3.4, 3.4])
+ax.set_ylim([-2.45, 2.45])
+ax.set_xticks([-3,-2,-1,0,1,2,3])
+ax.set_yticks([-2,-1,0,1,2])
+ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+ax.set_xlabel('arcsec', fontsize=15.0) 
+ax.set_ylabel('arcsec', fontsize=15.0)
+ax.tick_params(width=1.0, length=5.0)
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(1.0)
+
+v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+im = ax.imshow(plt_Data, cmap='rainbow',
+               vmin=7.8, vmax=9.0, 
+               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.05)
+cb = plt.colorbar(im, cax=cax)
+
+ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+              label=r"H${\rm \alpha}$ flux contour")
+ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+          handlelength=2.5, frameon=True, borderpad=0.8,
+          framealpha=0.8, edgecolor='gray')
+
+# The orientations
+x0 = -2.75 ; y0 = 1.25
+L = 0.6 ; theta0 = gpa*(np.pi/180.0)
+ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+# Scale bar
+kpc5 = 5.0 / ang_scale
+ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
+          fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+plt.savefig(dir_fig+'Metallicity_logOH3.pdf')
+plt.savefig(dir_fig+'Metallicity_logOH3.png', dpi=300)
+plt.close()
+# ----- END: Oxygen abundance map (3) ----- #
+
+
+# ----- START: Ionization parameter map ----- #
+plt_Data = copy.deepcopy(NB_logU_2D) + np.log10(c*1.0e+5)
+plt_Data[plt_Data == 0] = np.nan
+
+fig, ax = plt.subplots(1, 1, figsize=(8,5))
+plt.suptitle(r"${\rm log(q)}$ map",
+             x=0.5, ha='center', y=0.96, va='top',
+             fontsize=20.0)
+ax.set_xlim([-3.4, 3.4])
+ax.set_ylim([-2.45, 2.45])
+ax.set_xticks([-3,-2,-1,0,1,2,3])
+ax.set_yticks([-2,-1,0,1,2])
+ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+ax.set_xlabel('arcsec', fontsize=15.0) 
+ax.set_ylabel('arcsec', fontsize=15.0)
+ax.tick_params(width=1.0, length=5.0)
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(1.0)
+
+v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+im = ax.imshow(plt_Data, cmap='rainbow',
+               vmin=v_low, vmax=v_high, 
+               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.05)
+cb = plt.colorbar(im, cax=cax)
+
+ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+              label=r"H${\rm \alpha}$ flux contour")
+ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+          handlelength=2.5, frameon=True, borderpad=0.8,
+          framealpha=0.8, edgecolor='gray')
+
+# The orientations
+x0 = -2.75 ; y0 = 1.25
+L = 0.6 ; theta0 = gpa*(np.pi/180.0)
+ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+# Scale bar
+kpc5 = 5.0 / ang_scale
+ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
+          fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+plt.savefig(dir_fig+'Metallicity_logU.pdf')
+plt.savefig(dir_fig+'Metallicity_logU.png', dpi=300)
+plt.close()
+# ----- END: Ionization parameter map ----- #
 
 
 # Printing the running time
