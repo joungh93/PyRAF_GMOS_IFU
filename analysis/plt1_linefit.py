@@ -513,6 +513,42 @@ print(f"Flux-weighted mean of Ha/Hb flux ratio : {fwm_Hab:.3f} +/- {e_fwm_Hab:.3
 # ----- END: H alpha / H beta flux ratio map ----- #
 
 
+'''
+plt_Data[plt_Data <= 3*e_Hab] = np.nan
+
+fig, ax = plt.subplots(1, 1, figsize=(8,5))
+plt.suptitle(r"${\rm H\alpha/H\beta}$ flux ratio map",
+             x=0.5, ha='center', y=0.96, va='top',
+             fontsize=20.0)
+ax.set_xlim([-3.4, 3.4])
+ax.set_ylim([-2.45, 2.45])
+ax.set_xticks([-3,-2,-1,0,1,2,3])
+ax.set_yticks([-2,-1,0,1,2])
+ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+ax.set_xlabel('arcsec', fontsize=15.0) 
+ax.set_ylabel('arcsec', fontsize=15.0)
+ax.tick_params(width=1.0, length=5.0)
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(1.0)
+im = ax.imshow(plt_Data, cmap='rainbow',
+               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.05)
+cb = plt.colorbar(im, cax=cax)
+
+ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+              label=r"H${\rm \alpha}$ flux contour")
+ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+          handlelength=2.5, frameon=True, borderpad=0.8,
+          framealpha=0.8, edgecolor='gray')
+plt.savefig(dir_fig+'Line_ratio_eHab.pdf')
+plt.savefig(dir_fig+'Line_ratio_eHab.png', dpi=300)
+plt.close()
+'''
+
+
 # ----- START: SFR (H alpha) map ----- #
 # Hab = copy.deepcopy(plt_Data)
 Hab = np.ones((plt_Data.shape[0], plt_Data.shape[1]))*fwm_Hab
@@ -1374,57 +1410,109 @@ for p in np.arange(len(grid_params)):
     slice_NLR = tuple(slice_NLR)
     prior *= prior_1D[slice_NLR]
 
-# Running NebulaBayse for each Voronoi bin
+# Initializing parameters
 NB_logOH_2D = np.zeros_like(Halpha_flux_2D)
 NB_logU_2D = np.zeros_like(Halpha_flux_2D)
+fault_bin = []
+
+# Calculating weight-mean flux ratio in advance
+flx0_Data = copy.deepcopy(Halpha_flux_2D)
+e_flx0_Data = copy.deepcopy(e_Halpha_flux_2D)
+flx0_sum = np.sum(flx0_Data[val])
+e_flx0_sum = np.sqrt(np.sum(e_flx0_Data[val]**2.))
+
+snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
+rchisq_cnd = (Halpha_rchisq_2D > 50.)
+zero_cnd = (snr_cnd | rchisq_cnd)
+
+plt_Data[zero_cnd] = np.nan
+
+wm_ratios, e_wm_ratios = [], []
+for l in linelist_GEMname:
+    exec("flx1_Data = copy.deepcopy("+l+"_flux_2D)")
+    exec("e_flx1_Data = copy.deepcopy(e_"+l+"_flux_2D)")
+    exec("snr_Data = copy.deepcopy("+l+"_snr_2D)")
+    
+    flx_ratio = flx1_Data / flx0_Data
+    snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (snr_Data < 3.0))
+    rchisq_cnd = (Halpha_rchisq_2D > 50.)
+    zero_cnd = (snr_cnd | rchisq_cnd)
+    flx_ratio[zero_cnd] = 0.
+    flx_ratio[flx_ratio == 0.] = np.nan
+    flx_ratio[np.isinf(flx_ratio) == True] = np.nan
+    val = (np.isnan(flx_ratio) == False)
+
+    wm = np.average(flx_ratio[val], weights=flx0_Data[val])
+    wm_ratios.append(wm)
+
+    e_flx_ratio = flx_ratio * np.sqrt((e_flx0_Data/flx0_Data)**2 + (e_flx1_Data/flx1_Data)**2)
+
+    Aj = (flx0_Data[val]*flx_ratio[val])
+    Cj = Aj/flx0_sum
+    e_Aj = Aj * np.sqrt((e_flx0_Data[val]/flx0_Data[val])**2 + (e_flx_ratio[val]/flx_ratio[val])**2)
+    e_Cj = Cj * np.sqrt((e_Aj/Aj)**2. + (e_flx0_sum/flx0_sum)**2.)
+
+    e_wm = np.sum(e_Cj)
+    e_wm_ratios.append(e_wm)
+
+# Running NebulaBayse for each Voronoi bin
+snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (NII6584_snr_2D < 3.0))
+rchisq_cnd = (Halpha_rchisq_2D > 50.)
+zero_cnd = (snr_cnd | rchisq_cnd)
 
 for i in np.arange(nvbin):
-    print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
-    obs_fluxes, obs_errs = [], []
-    for l in linelist_GEMname:
-        exec("fl = "+l+"_flux_2D[data_vbin == i]")
-        exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
-        fl_input, e_fl_input = np.unique(fl)[0], np.unique(e_fl)[0]
-        if (fl_input <= 0.0):
-            fl_input, e_fl_input = 1.0e-10, 1.0e-11
-        obs_fluxes.append(fl_input)
-        obs_errs.append(e_fl_input)
+    if (np.unique(zero_cnd[data_vbin == i])[0] == False):
+        print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
+        obs_fluxes, obs_errs = [], []
+        for l in linelist_GEMname:
+            idx_l = linelist_GEMname.index(l)
+            exec("fl = "+l+"_flux_2D[data_vbin == i]")
+            exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
+            fl_input, e_fl_input = np.unique(fl)[0], np.unique(e_fl)[0]
+            if (fl_input <= 0.0):
+                fl0 = np.unique(Halpha_flux_2D[data_vbin == i])[0]
+                e_fl0 = np.unique(e_Halpha_flux_2D[data_vbin == i])[0]
+                fl_input = fl0 * wm_ratios[idx_l]
+                e_fl_input = fl_input * np.sqrt((e_fl0/fl0)**2 + (e_wm_ratios[idx_l]/wm_ratios[idx_l])**2)
+            obs_fluxes.append(fl_input)
+            obs_errs.append(e_fl_input)
 
-    kwargs = {"norm_line": norm_line,
-              "deredden": False,
-              "obs_wavelengths": wavlist_NBinput,
-              "prior": prior,
-              # "prior": "Uniform",
-              "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
-              "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
-              "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
-              "estimate_table": os.path.join(OUT_DIR, f"1_HII_param_estimates_bin{i:d}.csv"),
-              "best_model_table": os.path.join(OUT_DIR, f"1_HII_best_model_bin{i:d}.csv")
-              }
+        kwargs = {"norm_line": norm_line, "deredden": False,
+                  "obs_wavelengths": wavlist_NBinput, "prior": prior,
+                  # "prior": "Uniform",
+                  "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
+                  "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
+                  "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
+                  "estimate_table": os.path.join(OUT_DIR, f"1_HII_param_estimates_bin{i:d}.csv"),
+                  "best_model_table": os.path.join(OUT_DIR, f"1_HII_best_model_bin{i:d}.csv")
+                  }
 
-    try:
-        Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
-        Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
-        print("\nParameter estimate table:")
-        print(Estimate_table)
+        try:
+            Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
+            Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
+            print("\nParameter estimate table:")
+            print(Estimate_table)
 
-        for p in grid_params:
-            est = Estimate_table.loc[p, "Estimate"]
-            low = Estimate_table.loc[p, "CI68_low"]
-            high = Estimate_table.loc[p, "CI68_high"]
-            print("\nThe measured "+p+" = "
-                  "{0:.2f}^{{+{1:.2f}}}_{{-{2:.2f}}}".format(est, *(high-est, est-low)))
+            for p in grid_params:
+                est = Estimate_table.loc[p, "Estimate"]
+                low = Estimate_table.loc[p, "CI68_low"]
+                high = Estimate_table.loc[p, "CI68_high"]
+                print("\nThe measured "+p+" = "
+                      "{0:.2f}^{{+{1:.2f}}}_{{-{2:.2f}}}".format(est, *(high-est, est-low)))
 
-        best_model_dict = Result_HII.Posterior.best_model
-        print("\nBest model table:")
-        print(best_model_dict["table"])  # pandas DataFrame
+            best_model_dict = Result_HII.Posterior.best_model
+            print("\nBest model table:")
+            print(best_model_dict["table"])  # pandas DataFrame
 
-        NB_logOH_2D[data_vbin == i] = Estimate_table.loc["12 + log O/H", "Estimate"]
-        NB_logU_2D[data_vbin == i] = Estimate_table.loc["log U", "Estimate"]
-    
-    except ValueError:
-        # print(ValueError)
-        continue
+            NB_logOH_2D[data_vbin == i] = Estimate_table.loc["12 + log O/H", "Estimate"]
+            NB_logU_2D[data_vbin == i] = Estimate_table.loc["log U", "Estimate"]
+        
+        except ValueError:
+            # print(ValueError)
+            continue
+    else:
+        print(f"\n----- NebulaBayes is not available for bin {i:d} -----\n")
+        fault_bin.append(i)
 
 
 # ----- START: Oxygen abundance map (3) ----- #
