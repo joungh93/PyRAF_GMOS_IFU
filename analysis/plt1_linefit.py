@@ -1324,7 +1324,7 @@ for l in linelist_NBinput:
     wavlist_NBinput.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
 
 # Set outputs:
-OUT_DIR = "NB_HII"
+OUT_DIR = dir_fig+"NB_HII"
 if (glob.glob(OUT_DIR) == []):
     os.system("mkdir "+OUT_DIR)
 else:
