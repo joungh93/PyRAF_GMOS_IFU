@@ -14,6 +14,7 @@ import numpy as np
 import glob, os, copy
 import init_cfg as ic
 from astropy.io import fits
+from astropy.table import Table 
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -1311,11 +1312,11 @@ dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
 from NebulaBayes import NB_Model
 
 # These HII-region optical emission-line fluxes have already been dereddened
+# linelist_NBinput = ["Halpha", "NII6583", "SII6716", "SII6731"]
+# linelist_GEMname = ["Halpha", "NII6584", "SII6717", "SII6731"]
+norm_line = "Halpha"
 linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
 linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
-norm_line = "Halpha"
-# linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
-# linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
 
 df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
 wavlist_NBinput = []
@@ -1330,40 +1331,24 @@ else:
     os.system("rm -rfv "+OUT_DIR+"/*")
 
 # Initialize the NB_Model, which loads and interpolates the model flux grids:
-Ngrid = (24, 24, 100)
-NB_Model_HII = NB_Model("HII", line_list=linelist_NBinput,
+grid_table_file = os.path.join(dir_NB, "grids", "NB_HII_grid.fits.gz")
+BinTableHDU_0 = fits.getdata(grid_table_file, ext=0)
+DF_grid = Table(BinTableHDU_0).to_pandas()
+DF_grid = DF_grid[DF_grid["log P/k"] == 5.8]    # Fixing log P/k = 5.8
+grid_params = ["log U", "12 + log O/H"]
+
+Ngrid = (100, 200)    # less than 60000
+NB_Model_HII = NB_Model(DF_grid, grid_params, line_list=linelist_NBinput,
                         interpd_grid_shape=Ngrid, grid_error=0.1)
 Result0_HII = NB_Model_HII([1.]*len(linelist_NBinput), [0.1]*len(linelist_NBinput),
                            linelist_NBinput, norm_line=norm_line)
 
-# Setting custom prior for log P/k
-grid_spec = Result0_HII.Posterior.Grid_spec
-param_ind = grid_spec.param_names.index("log P/k")
-all_Pk_values = grid_spec.param_values_arrs[param_ind]  # Sorted 1D array
-
-lcut, ucut = 5.0, 7.0
-log_Pk_1D_prior = np.ones(Ngrid[param_ind])
-gauss_lower = np.exp( -((all_Pk_values - lcut) / 0.2)**2 / 2.)
-gauss_upper = np.exp( -((all_Pk_values - ucut) / 0.2)**2 / 2.)
-log_Pk_1D_prior[((all_Pk_values >= lcut) & (all_Pk_values <= ucut))] = 1.0
-log_Pk_1D_prior[all_Pk_values < lcut] = gauss_lower[all_Pk_values < lcut]
-log_Pk_1D_prior[all_Pk_values > ucut] = gauss_upper[all_Pk_values > ucut]
-
-# This array has only one dimension.  Construct a slice to use numpy
-# "broadcasting" to apply the 1D prior over the whole 2D grid:
-# (The following method works in nD, although here it's a 2D grid)
-slice_NLR = [np.newaxis for _ in grid_spec.shape]
-slice_NLR[param_ind] = slice(None)  # "[slice(None)]" means "[:]"
-slice_NLR = tuple(slice_NLR)
-contribution_Pk = np.ones(grid_spec.shape) * log_Pk_1D_prior[slice_NLR]
-prior = contribution_Pk
-
 
 # Running NebulaBayse for each Voronoi bin
 NB_logOH_2D = np.zeros_like(Halpha_flux_2D)
-NB_logPk_2D = np.zeros_like(Halpha_flux_2D)
 NB_logU_2D = np.zeros_like(Halpha_flux_2D)
-for i in np.arange(1):#np.arange(nvbin):
+
+for i in np.arange(nvbin):
     print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
     obs_fluxes, obs_errs = [], []
     for l in linelist_GEMname:
@@ -1389,42 +1374,26 @@ for i in np.arange(1):#np.arange(nvbin):
         Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
         print("\nParameter estimate table:")
         print(Estimate_table)
-        
-        logOH_est = Estimate_table.loc["12 + log O/H", "Estimate"]
-        logOH_low = Estimate_table.loc["12 + log O/H", "CI68_low"]
-        logOH_high = Estimate_table.loc["12 + log O/H", "CI68_high"]
-        logOH_errs = (logOH_est - logOH_low, logOH_high - logOH_est)
-        
-        logPk_est = Estimate_table.loc["log P/k", "Estimate"]
-        logPk_low = Estimate_table.loc["log P/k", "CI68_low"]
-        logPk_high = Estimate_table.loc["log P/k", "CI68_high"]
-        logPk_errs = (logPk_est - logPk_low, logPk_high - logPk_est)
-        
-        logU_est = Estimate_table.loc["log U", "Estimate"]
-        logU_low = Estimate_table.loc["log U", "CI68_low"]
-        logU_high = Estimate_table.loc["log U", "CI68_high"]
-        logU_errs = (logU_est - logU_low, logU_high - logU_est)
-        
-        print("\nThe measured oxygen abundance is 12 + log O/H = "
-              "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logOH_est, *logOH_errs))
-        print("\nThe measured pressure is log P/k = "
-              "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logPk_est, *logPk_errs))
-        print("\nThe measured ionization parmeter is log U = "
-              "{0:.2f}_{{-{1:.2f}}}^{{+{2:.2f}}}".format(logU_est, *logU_errs))
+
+        for p in grid_params:
+            est = Estimate_table.loc[p, "Estimate"]
+            low = Estimate_table.loc[p, "CI68_low"]
+            high = Estimate_table.loc[p, "CI68_high"]
+            print("\nThe measured "+p+" = "
+                  "{0:.2f}^{{+{1:.2f}}}_{{-{2:.2f}}}".format(est, *(high-est, est-low)))
 
         best_model_dict = Result_HII.Posterior.best_model
         print("\nBest model table:")
         print(best_model_dict["table"])  # pandas DataFrame
 
-        NB_logOH_2D[data_vbin == i] = logOH_est
-        NB_logPk_2D[data_vbin == i] = logPk_est
-        NB_logU_2D[data_vbin == i] = logU_est
+        NB_logOH_2D[data_vbin == i] = Estimate_table.loc["12 + log O/H", "Estimate"]
+        NB_logU_2D[data_vbin == i] = Estimate_table.loc["log U", "Estimate"]
     
     except ValueError:
         # print(ValueError)
         continue
 
-'''
+
 # ----- START: Oxygen abundance map (3) ----- #
 plt_Data = copy.deepcopy(NB_logOH_2D)
 plt_Data[plt_Data == 0] = np.nan
@@ -1538,7 +1507,7 @@ plt.savefig(dir_fig+'Metallicity_logU.pdf')
 plt.savefig(dir_fig+'Metallicity_logU.png', dpi=300)
 plt.close()
 # ----- END: Ionization parameter map ----- #
-'''
+
 
 # Printing the running time
 print('\n')
