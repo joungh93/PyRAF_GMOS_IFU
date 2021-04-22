@@ -1348,7 +1348,7 @@ grid_spec = Result0_HII.Posterior.Grid_spec
 param_cut = [[-3.75, -3.0], [7.663, 8.76]]
 prior = np.ones(grid_spec.shape)
 prior_func = "Gaussian"    # "Uniform", "Gaussian"
-sigma_func = [0.2, 0.1]
+sigma_func = [0.1, 0.1]
 for p in np.arange(len(grid_params)):
     param_idx = grid_spec.param_names.index(grid_params[p])
     all_values = grid_spec.param_values_arrs[param_idx]    # Sorted 1D array
@@ -1384,8 +1384,11 @@ for i in np.arange(nvbin):
     for l in linelist_GEMname:
         exec("fl = "+l+"_flux_2D[data_vbin == i]")
         exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
-        obs_fluxes.append(np.unique(fl)[0])
-        obs_errs.append(np.unique(e_fl)[0])
+        fl_input, e_fl_input = np.unique(fl)[0], np.unique(e_fl)[0]
+        if (fl_input <= 0.0):
+            fl_input, e_fl_input = 1.0e-10, 1.0e-11
+        obs_fluxes.append(fl_input)
+        obs_errs.append(e_fl_input)
 
     kwargs = {"norm_line": norm_line,
               "deredden": False,
