@@ -79,6 +79,11 @@ iraf.gfdisplay('eqxbrg'+std0, 1, version=vkw)
 # ----- Displaying the extracted data for checking bad columns ----- #
 # fits.open('eqxbrg'+std0+'.fits').info()
 
+if (glob.glob("badcol/") == []):
+	os.system("mkdir badcol")
+# ---> making a directory for bad column masking region files
+# ("badcol/std{}_slit{}.reg", with DS9 saoimage format)
+
 dt1, hd1 = fits.getdata('eqxbrg'+std0+'.fits', ext=2, header=True)
 z1l, z1u = np.percentile(dt1, [15, 85])
 # 2-slit mode
