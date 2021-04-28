@@ -42,65 +42,77 @@ if (ic.nslit == 2):
 
 # ----- Reading masking coordinates ----- #
 if (ic.nslit == 1):
-    fix_std = {'slit1': [[], []], 'slit2': [[], []]}
+    fix_std = {'slit1': [[], []]}
 if (ic.nslit == 2):
     fix_std = {'slit1': [[], []], 'slit2': [[], []]}
 
 for i in 1+np.arange(ic.nslit):
     regfile = "badcol/std1_slit{0:1d}.reg".format(i)
     if (glob.glob(regfile) == []):
-        continue
+        fix_std["slit{0:1d}".format(i)][0].append(100)
+        fix_std["slit{0:1d}".format(i)][1].append(0)
     else:
         x0, y0, xs, ys, _ = read_region(regfile, regtype="box")
-        fix_std["slit{0:1d}".format(i)][0].append(int(round(x0[0]))-1)
-        fix_std["slit{0:1d}".format(i)][1].append(int(round(xs[0]))-1)
+        fix_std["slit{0:1d}".format(i)][0].append(int(round(x0[0])))
+        fix_std["slit{0:1d}".format(i)][1].append(int(round(xs[0])))
 
 
-for i in np.arange(len(iraf.type(ic.lst_std, Stdout=1))):
-    std = iraf.type(ic.lst_std, Stdout=1)[i].strip()
-    exec('dic = copy.deepcopy(fix_sci{0:02d})'.format(i+1))
-    for j in np.arange(ic.nslit):
-    	fmsk = 'mskbadcol_'+std0+'_{0:1d}.txt'.format(j+1)
-    	s = dic['slit{0:1d}'.format(j+1)]
-    	exec('d = dt{0:1d}'.format(j+1))
-    	for k in np.arange(len(s[0])):
-    		if (k == 0):
-    			com = "echo '{0:d} {1:d} 1 {2:d}' > ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
-    			os.system(com)
-    		else:
-    			com = "echo '{0:d} {1:d} 1 {2:d}' >> ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
-    			os.system(com)
-    	iraf.text2mask(fmsk, fmsk.strip('.txt')+'.pl', d.shape[1], d.shape[0])
+# ----- Saving masking coordinates in text files ----- #
+dic = copy.deepcopy(fix_std)
+for j in np.arange(ic.nslit):
+	fmsk = 'mskbadcol_'+std0+'_{0:1d}.txt'.format(j+1)
+	s = dic['slit{0:1d}'.format(j+1)]
+	exec('d = dt{0:1d}'.format(j+1))
+	for k in np.arange(len(s[0])):
+		if (k == 0):
+			com = "echo '{0:d} {1:d} 1 {2:d}' > ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
+			os.system(com)
+		else:
+			com = "echo '{0:d} {1:d} 1 {2:d}' >> ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
+			os.system(com)
+	iraf.text2mask(fmsk, fmsk.strip('.txt')+'.pl', d.shape[1], d.shape[0])
 
 iraf.imdelete('xeqxbrg@'+ic.lst_std)
 iraf.imdelete('tmp@'+ic.lst_std)
 iraf.imdelete('tmpdq@'+ic.lst_std)
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.copy('eqxbrg'+std0+'.fits', 'tmp'+std0+'.fits')
-    for j in np.arange(ic.nslit):
-    	iraf.proto.fixpix('tmp'+std0+'.fits[sci,{0:1d}]'.format(j+1),
-    		              'mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1),
-    		              linterp='1,2,3,4')
-    iraf.copy('tmp'+std0+'.fits', 'xeqxbrg'+std0+'.fits')
-    for j in np.arange(ic.nslit):
-    	iraf.imarith('mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1), '+',
-    		         'xeqxbrg'+std0+'.fits[dq,{0:1d}]'.format(j+1),
-    		         'tmpdq'+std0+'.fits[dq,{0:1d}]'.format(j+1))
-    	iraf.imcopy('tmpdq'+std0+'.fits[dq,{0:1d}][*,*]'.format(j+1),
-    		        'xeqxbrg'+std0+'.fits[dq,{0:1d}][*,*]'.format(j+1))
-    	iraf.proto.fixpix('tmp'+std0+'.fits[sci,{0:1d}]'.format(j+1),
-    		              'mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1),
-    		              linterp='1,2,3,4')    
+
+# ----- Masking bad columns with IRAF/fixpix ----- #
+iraf.copy('eqxbrg'+std0+'.fits', 'tmp'+std0+'.fits')
+for j in np.arange(ic.nslit):
+	iraf.proto.fixpix('tmp'+std0+'.fits[sci,{0:1d}]'.format(j+1),
+		              'mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1),
+		              linterp='1,2,3,4')
+iraf.copy('tmp'+std0+'.fits', 'xeqxbrg'+std0+'.fits')
+for j in np.arange(ic.nslit):
+	iraf.imarith('mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1), '+',
+		         'xeqxbrg'+std0+'.fits[dq,{0:1d}]'.format(j+1),
+		         'tmpdq'+std0+'.fits[dq,{0:1d}]'.format(j+1))
+	iraf.imcopy('tmpdq'+std0+'.fits[dq,{0:1d}][*,*]'.format(j+1),
+		        'xeqxbrg'+std0+'.fits[dq,{0:1d}][*,*]'.format(j+1))
+	iraf.proto.fixpix('tmp'+std0+'.fits[sci,{0:1d}]'.format(j+1),
+		              'mskbadcol_'+std0+'_{0:1d}.pl'.format(j+1),
+		              linterp='1,2,3,4')    
 
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-	for j in np.arange(ic.nslit):
-		os.system('ds9 &')
-		iraf.sleep(5.0)
-		iraf.display(image = 'eqxbrg'+std0+'.fits[sci,{0:1d}]'.format(j+1), frame=1)
-		iraf.display(image = 'xeqxbrg'+std0+'.fits[sci,{0:1d}]'.format(j+1), frame = 2)
+# ----- Checking if the masking task is well done ----- #
+z1l, z1u = np.percentile(dt1, [15, 85])
+# 2-slit mode
+if (ic.nslit == 2):
+    z2l, z2u = np.percentile(dt2, [15, 85])
+
+if (ic.nslit == 1):
+    z1, z2 = z1l, z1u
+    ds9_frm = "ds9 xeqxbrg"+std0+".fits[2] -multiframe"
+    ds9_loc = " -scale lock yes -frame lock image"
+    ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+if (ic.nslit == 2):
+    z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
+    ds9_frm = "ds9 xeqxbrg"+std0+".fits[2] xeqxbrg"+std0+".fits[5] -multiframe"
+    ds9_loc = " -scale lock yes -frame lock image"
+    ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+
+os.system(ds9_frm + ds9_loc + ds9_scl)
 
 
 # Printing the running time
