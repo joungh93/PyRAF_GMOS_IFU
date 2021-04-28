@@ -29,17 +29,22 @@ iraf.chdir(current_dir)
 # ---------- Fixing a bad column ---------- #
 from astropy.io import fits
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    fits.open('eqxbrg'+std+'.fits').info()
-    # 2-slit mode
-    dt1, hd1 = fits.getdata('eqxbrg'+std+'.fits', ext=2, header=True)
-    dt2, hd2 = fits.getdata('eqxbrg'+std+'.fits', ext=5, header=True)
+std = np.loadtxt(ic.lst_std, dtype=str)
+if (std.size > 1):
+    raise ValueError("Please check if there is only one image for the standard star.")
+std0 = std.item(0)
 
-    # os.system('ds9 &')
-    # iraf.sleep(5.0)
-    # iraf.display(image = 'eqxbrg'+std+'.fits[sci,1]', frame = 1)
-    # iraf.display(image = 'eqxbrg'+std+'.fits[sci,2]', frame = 2)
+fits.open('eqxbrg'+std0+'.fits').info()
+# 2-slit mode
+dt1, hd1 = fits.getdata('eqxbrg'+std+'.fits', ext=2, header=True)
+if (ic.nslit == 2):
+	dt2, hd2 = fits.getdata('eqxbrg'+std+'.fits', ext=5, header=True)
+
+os.system('ds9 &')
+iraf.sleep(5.0)
+iraf.display(image = 'eqxbrg'+std+'.fits[sci,1]', frame=1)
+if (ic.nslit == 2):
+	iraf.display(image = 'eqxbrg'+std+'.fits[sci,2]', frame=2)
 
 
 # # Stop point #1 : please check the 'physical' coordinates in the images!
