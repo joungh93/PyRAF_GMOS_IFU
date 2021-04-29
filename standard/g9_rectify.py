@@ -56,4 +56,4 @@ os.system(ds9_comm+"txeqxbrg"+std0+".fits[2] stxeqxbrg"+std0+".fits[2] &")
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
