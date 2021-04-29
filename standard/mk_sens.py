@@ -13,6 +13,7 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import g0_init_cfg as ic
+from astropy.io import fits
 
 
 # ----- Importing IRAF from the root directory ----- #
@@ -30,14 +31,15 @@ iraf.unlearn('gsstandard')
 
 
 # ---------- Sensitivity function (after reducing standard star) ---------- #
-from astropy.io import fits
+std = np.loadtxt(ic.lst_std, dtype=str)
+if (std.size > 1):
+    raise ValueError("Please check if there is only one image for the standard star.")
+std0 = std.item(0)
 
 # Sum the fibers
 iraf.imdelete('astxeqxbrg@'+ic.lst_std)
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gfapsum('stxeqxbrg'+std, combine='sum', fl_inter='no')
+iraf.gfapsum('stxeqxbrg'+std0, combine='sum', fl_inter='no')
 
 for std in iraf.type(ic.lst_std, Stdout=1):
     std = std.strip()
