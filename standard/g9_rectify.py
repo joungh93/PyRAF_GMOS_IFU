@@ -43,21 +43,16 @@ if (std.size > 1):
     raise ValueError("Please check if there is only one image for the standard star.")
 std0 = std.item(0)
 
-iraf.imdelete('txeqxbrg'+std0, verify='no')
+iraf.imdelete('txeqxbrg@'+ic.lst_std, verify='no')
 iraf.gftransform('xeqxbrg'+std0, wavtraname='erg'+arc0, fl_vardq='yes')
 
 
 # ---------- Sky subtraction ---------- #
 iraf.imdelete('stxeqxbrg@'+ic.lst_std, verify='no')
-iraf.gfskysub('txeqxbrg'+std0, fl_inter='no',
-              combine='median', sepslits='yes')
+iraf.gfskysub('txeqxbrg'+std0, fl_inter='no', combine='median', sepslits='yes')
 
-os.system('ds9 &')
-iraf.sleep(5.0)
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.display('txeqxbrg'+std+'[sci,1]', 1)
-    iraf.display('stxeqxbrg'+std+'[sci,1]', 2)
+ds9_comm = "ds9 -scalemode zscale -scale lock yes -frame lock image "
+os.system(ds9_comm+"txeqxbrg"+std0+".fits[2] stxeqxbrg"+std0+".fits[2] &")
 
 
 # Printing the running time
