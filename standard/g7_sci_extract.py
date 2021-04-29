@@ -106,4 +106,4 @@ os.system(ds9_frm + ds9_loc + ds9_scl)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
