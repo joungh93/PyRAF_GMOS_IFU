@@ -13,6 +13,7 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import g0_init_cfg as ic
+from astropy.io import fits
 
 
 # ----- Importing IRAF from the root directory ----- #
@@ -30,49 +31,26 @@ iraf.unlearn('gfskysub')
 
 
 # ---------- Rectify the spectra ---------- #
-from astropy.io import fits
 
 # Angstroms per pixel
-arc0 = iraf.type(ic.lst_arc, Stdout=1)[0].strip()
+arc = np.loadtxt(ic.lst_arc, dtype=str)
+if (arc.size > 1):
+    raise ValueError("Please check if there is only one arc image for the standard star.")
+arc0 = arc.item(0)
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.imdelete('txeqxbrg'+std, verify='no')
-    iraf.gftransform('xeqxbrg'+std, wavtraname='erg'+arc0, fl_vardq='no')
-    fits.open('txeqxbrg'+std+'.fits').info()
-    dat, hdr = fits.getdata('txeqxbrg'+std+'.fits', ext=2, header=True)
-    dw = float(hdr['CD1_1'])
-    print('dw : {0:f}'.format(dw))
+std = np.loadtxt(ic.lst_std, dtype=str)
+if (std.size > 1):
+    raise ValueError("Please check if there is only one image for the standard star.")
+std0 = std.item(0)
 
-
-# # Stop point #1 
-# import sys
-# sys.exit("Please check 'dw'.")
-
-
-# Rectify
-dw = 1.93
-
-iraf.imdelete('txeqxbrg@'+ic.lst_std)
-
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gftransform('xeqxbrg'+std, wavtraname='erg'+arc0, dw=dw, fl_vardq='yes')
-
-# os.system('ds9 &')
-# iraf.sleep(5.0)
-# for std in iraf.type(ic.lst_std, Stdout=1):
-#     std = std.strip()
-#     iraf.display('txeqxbrg'+std+'.fits[sci,1]', 1)
+iraf.imdelete('txeqxbrg'+std0, verify='no')
+iraf.gftransform('xeqxbrg'+std0, wavtraname='erg'+arc0, fl_vardq='yes')
 
 
 # ---------- Sky subtraction ---------- #
 iraf.imdelete('stxeqxbrg@'+ic.lst_std, verify='no')
-
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gfskysub('txeqxbrg'+std, fl_inter='no',
-                  combine='median', sepslits='yes')
+iraf.gfskysub('txeqxbrg'+std0, fl_inter='no',
+              combine='median', sepslits='yes')
 
 os.system('ds9 &')
 iraf.sleep(5.0)
