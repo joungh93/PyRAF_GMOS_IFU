@@ -44,7 +44,7 @@ Find apertures for erg[FLAT]_2? ('yes')
 Extract aperture spectra for erg[FLAT]_1? ('NO')
 ```
 
-When running ``g1_vmdf.py``, you should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the mission fibers**_. We have to revise them by revising & running the next code.
+When running ``g1_vmdf.py``, you should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the missing fibers**_. We have to revise them by revising & running the next code.
 
 ```
 > run rev_mdf.py
