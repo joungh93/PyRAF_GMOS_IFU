@@ -14,6 +14,7 @@ import numpy as np
 import glob, os
 import g0_init_cfg as ic
 from astropy.io import fits
+from matplotlib import pyplot as plt
 
 
 # ----- Importing IRAF from the root directory ----- #
@@ -43,6 +44,42 @@ iraf.gfapsum('stxeqxbrg'+std0, combine='sum', fl_inter='no')
 iraf.splot('astxeqxbrg'+std0+'[sci,1]')
 
 
+# Plot the sum spectra
+spec_sum, hd = fits.getdata('astxeqxbrg'+std0+'.fits', ext=1, header=True)
+w = hd['CRVAL1'] + np.arange(len(spec_sum))*hd['CD1_1']
+
+fig, ax = plt.subplots(1, 1, figsize=(7,5))
+plt.subplots_adjust(left=0.16, right=0.96, bottom=0.13, top=0.91)
+plt.suptitle("Sum of spectra", x=0.55, ha='center', y=0.97, va='top',
+	         fontsize=16.0, fontweight='bold')
+ax.set_xlabel(r"Wavelength [${\rm \AA}$]", fontsize=12.0)
+ax.set_ylabel("Counts", fontsize=12.0)
+# ax.set_yscale('log')
+ax.tick_params(axis='both', labelsize=12.0)
+ax.plot(w, spec_sum, color='C0', linewidth=1.5, alpha=0.8)
+ax.text(0.96, 0.95, ic.starname, fontsize=14.0, fontweight='bold',
+         color='k', ha='right', va='top', transform=ax.transAxes)
+plt.savefig(ic.caldir+ic.starname+"_specsum.png", dpi=300)
+plt.close()
+
+
+   fig, ax = plt.subplots(1, 1, figsize=(8,5))
+    plt.suptitle(name_elines[l]+" flux map",
+                 x=0.5, ha='center', y=0.96, va='top',
+                 fontsize=20.0)
+    ax.set_xlim([-3.4, 3.4])
+    ax.set_ylim([-2.45, 2.45])
+    ax.set_xticks([-3,-2,-1,0,1,2,3])
+    ax.set_yticks([-2,-1,0,1,2])
+    ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+    ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+    ax.set_xlabel('arcsec', fontsize=15.0) 
+    ax.set_ylabel('arcsec', fontsize=15.0)
+    ax.tick_params(width=1.0, length=5.0)
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(1.0)
+
+
 # Call gsstandard
 outflux = ic.root_name+'std'
 sensfunc = ic.root_name+'sens'
@@ -60,4 +97,4 @@ os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
 
 
 # Printing the running time
-print('--- %.4f seconds ---' %(time.time()-start_time))
+print('--- %.3f seconds ---' %(time.time()-start_time))
