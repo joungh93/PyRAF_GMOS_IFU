@@ -50,4 +50,4 @@ iraf.gemcrspec('brg'+std0, 'xbrg'+std0, logfile='crrej.log',
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
