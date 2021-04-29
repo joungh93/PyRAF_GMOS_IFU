@@ -1,5 +1,5 @@
 # standard
-(updated on 2021. 4. 12.)
+(updated on 2021. 4. 29.)
 
 ## Description
 Gemini GMOS/IFU reduction for standard star data
