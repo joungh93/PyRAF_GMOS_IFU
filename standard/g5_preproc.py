@@ -76,4 +76,4 @@ iraf.gfscatsub('rg'+std0, blkmsk0, outimage='', prefix='b',
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
