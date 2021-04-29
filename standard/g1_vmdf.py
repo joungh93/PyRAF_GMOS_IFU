@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+\#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct 30 17:21:30 2019
@@ -94,4 +94,4 @@ for i in np.arange(len(apfile)):
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
