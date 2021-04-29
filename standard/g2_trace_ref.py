@@ -65,4 +65,4 @@ iraf.gfdisplay('erg'+flat0, 1, version=vkw)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
