@@ -60,4 +60,4 @@ os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
 
 
 # Printing the running time
-print('--- %.3f seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
