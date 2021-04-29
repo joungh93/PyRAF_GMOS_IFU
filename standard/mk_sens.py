@@ -36,15 +36,11 @@ if (std.size > 1):
     raise ValueError("Please check if there is only one image for the standard star.")
 std0 = std.item(0)
 
+
 # Sum the fibers
 iraf.imdelete('astxeqxbrg@'+ic.lst_std)
-
 iraf.gfapsum('stxeqxbrg'+std0, combine='sum', fl_inter='no')
-
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    fits.open('astxeqxbrg'+std+'.fits').info()
-    iraf.splot('astxeqxbrg'+std+'[sci,1]')
+iraf.splot('astxeqxbrg'+std0+'[sci,1]')
 
 
 # Call gsstandard
@@ -54,16 +50,14 @@ sensfunc = ic.root_name+'sens'
 iraf.delete(outflux, verify='no')    # Not .fits file
 iraf.imdelete(sensfunc, verify='no')    # .fits file
 
-for std in iraf.type(ic.lst_std, Stdout=1):
-    std = std.strip()
-    iraf.gsstandard('astxeqxbrg'+std, outflux, sensfunc,
-    	            starname = ic.starname, observatory = ic.obs_site,
-    	            caldir = ic.stardir, extinction = ic.extinction,
-    	            fl_inter = 'yes', function = 'chebyshev', order=11)
+iraf.gsstandard('astxeqxbrg'+std0, outflux, sensfunc,
+	            starname = ic.starname, observatory = ic.obs_site,
+	            caldir = ic.stardir, extinction = ic.extinction,
+	            fl_inter = 'yes', function = 'chebyshev', order=11)
 
 # Store the solution
-iraf.copy(sensfunc+'.fits', ic.caldir)
+os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.3f seconds ---' %(time.time()-start_time))
