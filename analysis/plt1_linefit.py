@@ -644,9 +644,9 @@ def cal_sfr_disk(regfile):
 
     return [phot_table['aperture_sum'].data[0], phot_table['aperture_sum_err'].data[0]]
 
-# 1. HST
-SFR_disk_hst, e_SFR_disk_hst = cal_sfr_disk("HST_boundary_1sig_transformed.reg")
-print(f"SFR disk (HST) : {SFR_disk_hst:.2f} +/- {e_SFR_disk_hst:.2f} Mo/yr")
+# # 1. HST
+# SFR_disk_hst, e_SFR_disk_hst = cal_sfr_disk("HST_boundary_1sig_transformed.reg")
+# print(f"SFR disk (HST) : {SFR_disk_hst:.2f} +/- {e_SFR_disk_hst:.2f} Mo/yr")
 
 # 2. Gemini
 SFR_disk_gem, e_SFR_disk_gem = cal_sfr_disk("GMOS_boundary_1sig.reg")
@@ -725,7 +725,7 @@ logOH = 8.743 + 0.462*N2
 plt_Data = logOH
 
 fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm 12+log(O/H)}$ map",
+plt.suptitle(r"${\rm 12+log(O/H)}$ map (N2 method)",
              x=0.5, ha='center', y=0.96, va='top',
              fontsize=20.0)
 ax.set_xlim([-3.4, 3.4])
@@ -775,9 +775,9 @@ plt.savefig(dir_fig+'Metallicity_logOH.pdf')
 plt.savefig(dir_fig+'Metallicity_logOH.png', dpi=300)
 plt.close()
 
-def cal_fwm_logOH(regfile, data):
-    metal = copy.deepcopy(data)
-    metal[np.isnan(metal) == True] = 0.
+def cal_fwm_logOH(regfile, metal_data):
+    metal = copy.deepcopy(metal_data)
+    msk = (np.isnan(metal) == True)
 
     x0, y0, a, b, pa = read_region(regfile, regtype='ellipse')
     x0, y0 = x0[0]-1, y0[0]-1
@@ -786,13 +786,13 @@ def cal_fwm_logOH(regfile, data):
 
     ap = EAp(positions=[(x0, y0)], a=a, b=b, theta=pa)
 
-    tbl0 = apphot(data=flx_Data, apertures=ap, mask=None)
+    tbl0 = apphot(data=flx_Data, apertures=ap, mask=msk)
     flx_sum_disk = tbl0['aperture_sum'].data[0]
-    flx_sum_tail = np.sum(flx_Data) - flx_sum_disk
+    flx_sum_tail = np.sum(flx_Data[~msk]) - flx_sum_disk
 
-    tbl1 = apphot(data=flx_Data*metal, apertures=ap, mask=None)
+    tbl1 = apphot(data=flx_Data*metal, apertures=ap, mask=msk)
     logOH_fwm_disk = tbl1['aperture_sum'].data[0] / flx_sum_disk
-    logOH_fwm_tail = (np.sum(flx_Data*metal) - tbl1['aperture_sum'].data[0]) / flx_sum_tail
+    logOH_fwm_tail = (np.sum(flx_Data[~msk]*metal[~msk]) - tbl1['aperture_sum'].data[0]) / flx_sum_tail
 
     # one_arr = np.ones_like(metal)
     # one_arr[metal == 0.] = 0
@@ -807,13 +807,13 @@ val = (np.isnan(plt_Data) == False)
 fwm_logOH = np.average(plt_Data[val], weights=flx_Data[val])
 print(f"Flux-weighted mean of gas metallicity : {fwm_logOH:.3f}")
 
-# 1. HST
-logOH_disk_hst, logOH_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH)
-print(f"log OH (HST) : {logOH_disk_hst:.3f} + {logOH_tail_hst:.3f}")
+# # 1. HST
+# logOH_disk_hst, logOH_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH)
+# print(f"log OH (HST) : {logOH_disk_hst:.3f} +/- {logOH_tail_hst:.3f}")
 
 # 2. Gemini
 logOH_disk_gem, logOH_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", logOH)
-print(f"log OH (Gemini) : {logOH_disk_gem:.3f} + {logOH_tail_gem:.3f}")
+print(f"log OH (Gem) : {logOH_disk_gem:.3f} +/- {logOH_tail_gem:.3f}")
 # ----- END: Oxygen abundance map ----- #
 
 
@@ -936,13 +936,13 @@ val = (np.isnan(plt_Data) == False)
 fwm_logOH2 = np.average(plt_Data[val], weights=flx_Data[val])
 print(f"Flux-weighted mean of gas metallicity (2) : {fwm_logOH2:.3f}")
 
-# 1. HST
-logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
-print(f"log OH (HST) : {logOH2_disk_hst:.3f} + {logOH2_tail_hst:.3f}")
+# # 1. HST
+# logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
+# print(f"log OH (HST) : {logOH2_disk_hst:.3f} +/- {logOH2_tail_hst:.3f}")
 
 # 2. Gemini
 logOH2_disk_gem, logOH2_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", logOH2)
-print(f"log OH (Gemini) : {logOH2_disk_gem:.3f} + {logOH2_tail_gem:.3f}")
+print(f"log OH (Gemini) : {logOH2_disk_gem:.3f} +/- {logOH2_tail_gem:.3f}")
 # ----- END: Oxygen abundance map (2) ----- #
 
 
@@ -1341,7 +1341,7 @@ plt.close()
 # ----- Saving the results ----- #
 np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
 
-
+'''
 # ----- Applying NebulaBayes ----- #
 import NebulaBayes 
 dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
@@ -1520,7 +1520,7 @@ plt_Data = copy.deepcopy(NB_logOH_2D)
 plt_Data[plt_Data == 0] = np.nan
 
 fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm 12+log(O/H)}$ map",
+plt.suptitle(r"${\rm 12+log(O/H)}$ map (NebulaBayes)",
              x=0.5, ha='center', y=0.96, va='top',
              fontsize=20.0)
 ax.set_xlim([-3.4, 3.4])
@@ -1595,7 +1595,7 @@ for axis in ['top','bottom','left','right']:
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=v_low, vmax=v_high, 
+               vmin=6.8, vmax=7.5, 
                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -1628,7 +1628,7 @@ plt.savefig(dir_fig+'Metallicity_logU.pdf')
 plt.savefig(dir_fig+'Metallicity_logU.png', dpi=300)
 plt.close()
 # ----- END: Ionization parameter map ----- #
-
+'''
 
 # Printing the running time
 print('\n')
