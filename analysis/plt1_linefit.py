@@ -127,15 +127,14 @@ Y_coord = 0.1*(np.arange(Halpha_flux_2D.shape[0], step=1)-Halpha_flux_2D.shape[0
 
 flx_Data = copy.deepcopy(Halpha_flux_2D)
 snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
+# sig_cnd = (Halpha_sigma_2D < lsig_llim)
 rchi25, rchi50, rchi75 = np.percentile(Halpha_rchisq_2D[Halpha_rchisq_2D > 0.],
                                        [25.0, 50.0, 75.0])
 rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx25, flx50, flx75 = np.percentile(Halpha_flux_2D[Halpha_flux_2D > 0.],
-                                    [25.0, 50.0, 75.0])
-flx_cnd = (Halpha_flux_2D < flx25)
-# zero_cnd = (snr_cnd | rchisq_cnd)
-zero_cnd = (snr_cnd | rchisq_cnd)# | flx_cnd)
+# flx25, flx50, flx75 = np.percentile(Halpha_flux_2D[Halpha_flux_2D > 0.],
+#                                     [25.0, 50.0, 75.0])
+# flx_cnd = (Halpha_flux_2D < flx25)
+zero_cnd = (snr_cnd | rchisq_cnd)
 
 flx_Data[zero_cnd] = 0.
 sflx = ndimage.gaussian_filter(flx_Data, sigma=(1.2,1.2), order=0)
@@ -146,20 +145,16 @@ lws = tuple(np.repeat(2.5, len(lvs)-1))
 cs = tuple(['gray']*(len(lvs)-1))
 
 
-# ----- START: Flux maps ----- #
-for l in np.arange(len(emi_lines)):
-    exec("snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | ("+emi_lines[l]+"_snr_2D < 3.0))")
-    sig_cnd = (Halpha_sigma_2D < lsig_llim)
-    rchisq_cnd = (Halpha_rchisq_2D > 50.)
-    flx_cnd = (Halpha_flux_2D < flx25)
-    zero_cnd = (snr_cnd | rchisq_cnd)
+#####
 
-    exec(emi_lines[l]+"_flux_2D[zero_cnd] = 0.")
-    exec("plt_Data = "+emi_lines[l]+"_flux_2D")
+def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
+               add_cb=True, add_ct=True, add_or=True, add_sc=True,
+               cb_label=None, add_legend=True,
+               x0=-2.75, y0=1.25, L=0.6, theta0=gpa*(np.pi/180.0),
+               xN=-1.90, yN=1.25, xE=-2.95, yE=2.10):
 
     fig, ax = plt.subplots(1, 1, figsize=(8,5))
-    plt.suptitle(name_elines[l]+" flux map",
-                 x=0.5, ha='center', y=0.96, va='top',
+    plt.suptitle(title, x=0.5, ha='center', y=0.96, va='top',
                  fontsize=20.0)
     ax.set_xlim([-3.4, 3.4])
     ax.set_ylim([-2.45, 2.45])
@@ -173,42 +168,58 @@ for l in np.arange(len(emi_lines)):
     for axis in ['top','bottom','left','right']:
         ax.spines[axis].set_linewidth(1.0)
 
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
-    im = ax.imshow(plt_Data, cmap='gray_r', vmin=0., vmax=v_high,
+    im = ax.imshow(plt_Data, cmap=cmap, vmin=v_low, vmax=v_high,
                    aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cb = plt.colorbar(im, cax=cax)
-    cb.set_label(r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]',
-                 size=12.0, labelpad=15.0)
-    cb.ax.tick_params(labelsize=12.0)
 
-    ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-    p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-                  label=r"H${\rm \alpha}$ flux contour")
-    ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-              handlelength=2.5, frameon=True, borderpad=0.8,
-              framealpha=0.8, edgecolor='gray')
+    if add_cb:
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        cb = plt.colorbar(im, cax=cax)
+        cb.set_label(cb_label, size=12.0, labelpad=15.0)
+        cb.ax.tick_params(labelsize=12.0)
 
-    # The orientations
-    x0 = -2.75 ; y0 = 1.25
-    L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-    ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-             head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-             head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-    ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+    if add_ct:
+        ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+        if add_legend:
+            p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+                          label=r"H${\rm \alpha}$ flux contour")
+            ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+                      handlelength=2.5, frameon=True, borderpad=0.8,
+                      framealpha=0.8, edgecolor='gray')
 
-    # Scale bar
-    kpc5 = 5.0 / ang_scale
-    ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-              fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+    if add_or:
+        ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+                 head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+        ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+                 head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+        ax.text(xN, yN, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+        ax.text(xE, yE, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+    
+    if add_sc:
+        kpc5 = 5.0 / ang_scale
+        ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
+                  fc='blueviolet', ec='blueviolet', alpha=0.9)
+        ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
 
-    plt.savefig(dir_fig+'Map_flux_'+emi_lines[l]+'.pdf')
-    plt.savefig(dir_fig+'Map_flux_'+emi_lines[l]+'.png', dpi=300)
+    plt.savefig(out+'.pdf', dpi=300)
+    plt.savefig(out+'.png', dpi=300)
     plt.close()
+
+
+#####
+
+# ----- START: Flux maps ----- #
+for l in np.arange(len(emi_lines)):
+    exec("snr2_cnd = (snr_cnd | ("+emi_lines[l]+"_snr_2D < 3.0))")
+    zero_cnd = (snr2_cnd | rchisq_cnd)
+
+    exec(emi_lines[l]+"_flux_2D[zero_cnd] = 0.")
+    exec("plt_Data = "+emi_lines[l]+"_flux_2D")
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
+
+    plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
+               dir_fig+"Map_flux_"+emi_lines[l],
+               cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]')
 # ----- END: Flux maps ----- #
 
 
@@ -228,59 +239,11 @@ for l in np.arange(len(emi_lines)):
     # snr_pix[zero_cnd] = 0.
     # plt_Data = snr_pix
     exec("plt_Data = "+emi_lines[l]+"_snrpix_2D")
-
-    fig, ax = plt.subplots(1, 1, figsize=(8,5))
-    plt.suptitle(name_elines[l]+" S/N map (per pixel)",
-                 x=0.5, ha='center', y=0.96, va='top',
-                 fontsize=20.0)
-    ax.set_xlim([-3.4, 3.4])
-    ax.set_ylim([-2.45, 2.45])
-    ax.set_xticks([-3,-2,-1,0,1,2,3])
-    ax.set_yticks([-2,-1,0,1,2])
-    ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-    ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-    ax.set_xlabel('arcsec', fontsize=15.0) 
-    ax.set_ylabel('arcsec', fontsize=15.0)
-    ax.tick_params(width=1.0, length=5.0)
-    for axis in ['top','bottom','left','right']:
-        ax.spines[axis].set_linewidth(1.0)
-
     v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
-    im = ax.imshow(plt_Data, cmap='gray_r', vmin=0., vmax=v_high,
-                   aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cb = plt.colorbar(im, cax=cax)
-    cb.set_label('Signal-to-noise ratio per pixel',
-                 size=12.0, labelpad=15.0)
-    cb.ax.tick_params(labelsize=12.0)\
 
-    ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-    p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-                  label=r"H${\rm \alpha}$ flux contour")
-    ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-              handlelength=2.5, frameon=True, borderpad=0.8,
-              framealpha=0.8, edgecolor='gray')
-
-    # The orientations
-    x0 = -2.75 ; y0 = 1.25
-    L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-    ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-             head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-             head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-    ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-    # Scale bar
-    kpc5 = 5.0 / ang_scale
-    ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-              fc='blueviolet', ec='blueviolet', alpha=0.9)
-    ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-    plt.savefig(dir_fig+'Map_snr_'+emi_lines[l]+'.pdf')
-    plt.savefig(dir_fig+'Map_snr_'+emi_lines[l]+'.png', dpi=300)
-    plt.close()
+    plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
+               dir_fig+"Map_snr_"+emi_lines[l],
+               cb_label="Signal-to-noise ratio per pixel")
 # ----- END: S/N maps ----- #
 
 
@@ -299,59 +262,10 @@ plt_Data[Halpha_mu_2D == 0] = np.nan
 plt_Data[zero_cnd] = np.nan
 Rvd = plt_Data
 
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle("Radial velocity map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=v_low-25.0, vmax=v_high+25.0, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-cb.set_label(r'Relative velocity [${\rm km~s^{-1}}$]',
-             size=12.0, labelpad=15.0)
-cb.ax.tick_params(labelsize=12.0)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Map_rv_Halpha.pdf')
-plt.savefig(dir_fig+'Map_rv_Halpha.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
+           dir_fig+"Map_rv_Halpha", cmap='rainbow',
+           cb_label=r"Relative velocity [${\rm km~s^{-1}}$]")
 # ----- END: Radial velocity distribution (H alpha) map ----- #
 
 
@@ -366,6 +280,10 @@ zero_cnd = (snr_cnd | rchisq_cnd)
 
 plt_Data[zero_cnd] = np.nan
 Vdd = plt_Data
+
+plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
+           dir_fig+"Map_rv_Halpha", cmap='rainbow',
+           cb_label=r"Relative velocity [${\rm km~s^{-1}}$]")
 
 fig, ax = plt.subplots(1, 1, figsize=(8,5))
 plt.suptitle("Velocity dispersion map",
@@ -777,6 +695,7 @@ plt.close()
 
 def cal_fwm_logOH(regfile, metal_data):
     metal = copy.deepcopy(metal_data)
+    metal[metal <= 0.] = np.nan
     msk = (np.isnan(metal) == True)
 
     x0, y0, a, b, pa = read_region(regfile, regtype='ellipse')
@@ -1569,6 +1488,20 @@ ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet'
 plt.savefig(dir_fig+'Metallicity_logOH3.pdf')
 plt.savefig(dir_fig+'Metallicity_logOH3.png', dpi=300)
 plt.close()
+
+# Total
+val = (np.isnan(plt_Data) == False)
+fwm_logOH3 = np.average(plt_Data[val], weights=flx_Data[val])
+print(f"Flux-weighted mean of gas metallicity (NB) : {fwm_logOH3:.3f}")
+
+# # 1. HST
+# logOH3_disk_hst, logOH3_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", NB_logOH_2D)
+# print(f"log OH (HST) : {logOH3_disk_hst:.3f} +/- {logOH3_tail_hst:.3f}")
+
+# 2. Gemini
+logOH3_disk_gem, logOH3_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", NB_logOH_2D)
+print(f"log OH (Gemini) : {logOH3_disk_gem:.3f} +/- {logOH3_tail_gem:.3f}")
+
 # ----- END: Oxygen abundance map (3) ----- #
 
 
