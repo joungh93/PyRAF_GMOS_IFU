@@ -131,9 +131,9 @@ snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
 rchi25, rchi50, rchi75 = np.percentile(Halpha_rchisq_2D[Halpha_rchisq_2D > 0.],
                                        [25.0, 50.0, 75.0])
 rchisq_cnd = (Halpha_rchisq_2D > 50.)
-# flx25, flx50, flx75 = np.percentile(Halpha_flux_2D[Halpha_flux_2D > 0.],
-#                                     [25.0, 50.0, 75.0])
-# flx_cnd = (Halpha_flux_2D < flx25)
+flx25, flx50, flx75 = np.percentile(Halpha_flux_2D[Halpha_flux_2D > 0.],
+                                    [25.0, 50.0, 75.0])
+flx_cnd = (Halpha_flux_2D < flx25)
 zero_cnd = (snr_cnd | rchisq_cnd)
 
 flx_Data[zero_cnd] = 0.
@@ -145,8 +145,7 @@ lws = tuple(np.repeat(2.5, len(lvs)-1))
 cs = tuple(['gray']*(len(lvs)-1))
 
 
-#####
-
+# ----- Custom function for plotting ----- #
 def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
                add_cb=True, add_ct=True, add_or=True, add_sc=True,
                cb_label=None, add_legend=True,
@@ -204,9 +203,8 @@ def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
     plt.savefig(out+'.pdf', dpi=300)
     plt.savefig(out+'.png', dpi=300)
     plt.close()
+# ---------------------------------------- #
 
-
-#####
 
 # ----- START: Flux maps ----- #
 for l in np.arange(len(emi_lines)):
@@ -239,6 +237,7 @@ for l in np.arange(len(emi_lines)):
     # snr_pix[zero_cnd] = 0.
     # plt_Data = snr_pix
     exec("plt_Data = "+emi_lines[l]+"_snrpix_2D")
+    plt_Data[zero_cnd] = 0.
     v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
 
     plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
@@ -251,14 +250,7 @@ for l in np.arange(len(emi_lines)):
 ymax_idx, xmax_idx = np.unravel_index(Halpha_flux_2D.argmax(), Halpha_flux_2D.shape)
 Halpha_mu0 = Halpha_mu_2D[ymax_idx, xmax_idx]
 
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
 plt_Data = (c*(Halpha_mu_2D-Halpha_mu0)/Halpha_mu0)
-plt_Data[Halpha_mu_2D == 0] = np.nan
 plt_Data[zero_cnd] = np.nan
 Rvd = plt_Data
 
@@ -271,76 +263,32 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 
 # ----- START: Velocity dispersion (H alpha) map ----- #
 plt_Data = np.sqrt(Halpha_vsig_2D**2.0 - vsig0**2.0)
-
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
 plt_Data[zero_cnd] = np.nan
 Vdd = plt_Data
 
-plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
-           dir_fig+"Map_rv_Halpha", cmap='rainbow',
-           cb_label=r"Relative velocity [${\rm km~s^{-1}}$]")
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle("Velocity dispersion map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.0, vmax=v_high+25.0, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-cb.set_label(r'Velocity dispersion [${\rm km~s^{-1}}$]',
-             size=12.0, labelpad=15.0)
-cb.ax.tick_params(labelsize=12.0)
+plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
+           dir_fig+"Map_vd_Halpha", cmap='rainbow',
+           cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]")
 
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Map_vd_Halpha.pdf')
-plt.savefig(dir_fig+'Map_vd_Halpha.png', dpi=300)
-plt.close()
-
+# Calculating the flux-weighted mean of velocity dispersion
 fwm_vdisp = np.average(plt_Data[np.isnan(plt_Data) == False],
-                       weights=flx_Data[np.isnan(plt_Data) == False])
+                       weights=Halpha_flux_2D[np.isnan(plt_Data) == False])
+
+# Error propagation
+e_Hab = plt_Data * np.sqrt((e_Halpha_flux_2D/Halpha_flux_2D)**2 + (e_Hbeta_flux_2D/Hbeta_flux_2D)**2)
+
+flx_sum = np.sum(flx_Data[val])
+e_flx_sum = np.sqrt(np.sum(e_Halpha_flux_2D[val]**2.))
+
+Aj = (flx_Data[val]*plt_Data[val])
+Cj = Aj/flx_sum
+
+e_Aj = Aj * np.sqrt((e_Halpha_flux_2D[val]/flx_Data[val])**2 + (e_Hab[val]/plt_Data[val])**2)
+e_Cj = Cj * np.sqrt((e_Aj/Aj)**2. + (e_flx_sum/flx_sum)**2.)
+
+e_fwm_Hab = np.sum(e_Cj)
+
 
 print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
 # ----- END: Velocity dispersion (H alpha) map ----- #
