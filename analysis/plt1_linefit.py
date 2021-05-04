@@ -263,6 +263,7 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 
 # ----- START: Velocity dispersion (H alpha) map ----- #
 plt_Data = np.sqrt(Halpha_vsig_2D**2.0 - vsig0**2.0)
+# e_plt_Data = np.abs(Halpha_vsig_2D/plt_Data) * e_
 plt_Data[zero_cnd] = np.nan
 Vdd = plt_Data
 
@@ -275,20 +276,7 @@ plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
 fwm_vdisp = np.average(plt_Data[np.isnan(plt_Data) == False],
                        weights=Halpha_flux_2D[np.isnan(plt_Data) == False])
 
-# Error propagation
-e_Hab = plt_Data * np.sqrt((e_Halpha_flux_2D/Halpha_flux_2D)**2 + (e_Hbeta_flux_2D/Hbeta_flux_2D)**2)
-
-flx_sum = np.sum(flx_Data[val])
-e_flx_sum = np.sqrt(np.sum(e_Halpha_flux_2D[val]**2.))
-
-Aj = (flx_Data[val]*plt_Data[val])
-Cj = Aj/flx_sum
-
-e_Aj = Aj * np.sqrt((e_Halpha_flux_2D[val]/flx_Data[val])**2 + (e_Hab[val]/plt_Data[val])**2)
-e_Cj = Cj * np.sqrt((e_Aj/Aj)**2. + (e_flx_sum/flx_sum)**2.)
-
-e_fwm_Hab = np.sum(e_Cj)
-
+# Error propagation (later, "e_vdisp_2D is not available currently."")
 
 print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
 # ----- END: Velocity dispersion (H alpha) map ----- #
@@ -296,67 +284,66 @@ print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
 
 # ----- START: H alpha / H beta flux ratio map ----- #
 plt_Data = Halpha_flux_2D / Hbeta_flux_2D
+snr2_cnd = (snr_cnd | (Hbeta_snr_2D < 3.0))
+plt_Data[zero_cnd] = 0.
 plt_Data[plt_Data == 0.] = np.nan
 plt_Data[np.isinf(plt_Data) == True] = np.nan
 
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (Hbeta_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm H\alpha/H\beta}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=2.86, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
+plot_2Dmap(plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio map", 2.86, 1.10*v_high,
+           dir_fig+"Line_ratio_Hab", cmap='rainbow')
 
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
 
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+# fig, ax = plt.subplots(1, 1, figsize=(8,5))
+# plt.suptitle(r"${\rm H\alpha/H\beta}$ flux ratio map",
+#              x=0.5, ha='center', y=0.96, va='top',
+#              fontsize=20.0)
+# ax.set_xlim([-3.4, 3.4])
+# ax.set_ylim([-2.45, 2.45])
+# ax.set_xticks([-3,-2,-1,0,1,2,3])
+# ax.set_yticks([-2,-1,0,1,2])
+# ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+# ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+# ax.set_xlabel('arcsec', fontsize=15.0) 
+# ax.set_ylabel('arcsec', fontsize=15.0)
+# ax.tick_params(width=1.0, length=5.0)
+# for axis in ['top','bottom','left','right']:
+#     ax.spines[axis].set_linewidth(1.0)
 
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+# v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+# im = ax.imshow(plt_Data, cmap='rainbow',
+#                vmin=2.86, vmax=1.1*v_high, 
+#                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
+# divider = make_axes_locatable(ax)
+# cax = divider.append_axes("right", size="5%", pad=0.05)
+# cb = plt.colorbar(im, cax=cax)
 
-plt.savefig(dir_fig+'Line_ratio_Hab.pdf')
-plt.savefig(dir_fig+'Line_ratio_Hab.png', dpi=300)
-plt.close()
+# ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+# p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+#               label=r"H${\rm \alpha}$ flux contour")
+# ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+#           handlelength=2.5, frameon=True, borderpad=0.8,
+#           framealpha=0.8, edgecolor='gray')
+
+# # The orientations
+# x0 = -2.75 ; y0 = 1.25
+# L = 0.6 ; theta0 = gpa*(np.pi/180.0)
+# ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+# ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+# # Scale bar
+# kpc5 = 5.0 / ang_scale
+# ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
+#           fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+
+# plt.savefig(dir_fig+'Line_ratio_Hab.pdf')
+# plt.savefig(dir_fig+'Line_ratio_Hab.png', dpi=300)
+# plt.close()
 
 val = (np.isnan(plt_Data) == False)
 fwm_Hab = np.average(plt_Data[val], weights=flx_Data[val])
@@ -377,6 +364,10 @@ e_fwm_Hab = np.sum(e_Cj)
 
 print(f"Flux-weighted mean of Ha/Hb flux ratio : {fwm_Hab:.3f} +/- {e_fwm_Hab:.3f}")
 # ----- END: H alpha / H beta flux ratio map ----- #
+
+
+##########
+
 
 
 '''
