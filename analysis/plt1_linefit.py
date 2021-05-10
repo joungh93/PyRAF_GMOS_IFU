@@ -231,13 +231,12 @@ def weighted_mean(data, weights, e_data=None, e_weights=None):
 
 # ----- START: Flux maps ----- #
 for l in np.arange(len(emi_lines)):
-    exec("snr2_cnd = (snr_cnd | ("+emi_lines[l]+"_snr_2D < 3.0))")
-    zero_cnd = (snr2_cnd | rchisq_cnd)
+    exec("snr2_cnd = ("+emi_lines[l]+"_snr_2D < 3.0)")
+    zero2_cnd = (zero_cnd | snr2_cnd)
 
-    exec(emi_lines[l]+"_flux_2D[zero_cnd] = 0.")
+    exec(emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("plt_Data = "+emi_lines[l]+"_flux_2D")
     v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
-
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
                dir_fig+"Map_flux_"+emi_lines[l],
                cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]')
@@ -283,8 +282,8 @@ plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
            cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]")
 
 # Flux-weighted mean
-val = (np.isnan(plt_Data) == False)
-fwm_vdisp = weighted_mean(data=plt_Data[val], weights=Halpha_flux_2D[val])
+val_vdd = (np.isnan(plt_Data) == False)
+fwm_vdisp = weighted_mean(data=plt_Data[val_vdd], weights=Halpha_flux_2D[val_vdd])
 
 # fwm_vdisp = np.average(plt_Data[np.isnan(plt_Data) == False],
 #                        weights=Halpha_flux_2D[np.isnan(plt_Data) == False])
@@ -296,145 +295,81 @@ print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
 
 
 # ----- START: H alpha / H beta flux ratio map ----- #
-plt_Data = Halpha_flux_2D / Hbeta_flux_2D
-snr2_cnd = (snr_cnd | (Hbeta_snr_2D < 3.0))
-plt_Data[zero_cnd] = 0.
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
+def get_line_ratio(flux1, flux2, snr1, snr2, e_flux1=None, e_flux2=None):
+    # flux1, flux2 : flux data 2D array
+    line_ratio = flux1 / flux2
+    snr2_cnd = ((snr1 < 3.0) | (snr2 < 3.0))
+    zero2_cnd = (zero_cnd | snr2_cnd)
+    line_ratio[zero2_cnd] = 0.
+    line_ratio[line_ratio == 0.] = np.nan
+    line_ratio[np.isinf(line_ratio) == True] = np.nan
+    if ((e_flux1 is not None) & (e_flux2 is not None)):
+        e_line_ratio = line_ratio * np.sqrt((e_flux1/flux1)**2 + (e_flux2/flux2)**2)
+    else:
+        e_line_ratio = np.zeros_like(line_ratio)
+    return [line_ratio, e_line_ratio]
 
+plt_Data, e_plt_Data = get_line_ratio(Halpha_flux_2D, Hbeta_flux_2D, Halpha_snr_2D, Hbeta_snr_2D,
+                                      e_Halpha_flux_2D, e_Hbeta_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio map", 2.86, 1.10*v_high,
            dir_fig+"Line_ratio_Hab", cmap='rainbow')
 
 # Flux-weighted mean
-val = (np.isnan(plt_Data) == False)
-
-e_Hab = plt_Data * np.sqrt((e_Halpha_flux_2D/Halpha_flux_2D)**2 + (e_Hbeta_flux_2D/Hbeta_flux_2D)**2)
-
-fwm_Hab, e_fwm_Hab = weighted_mean(data=plt_Data[val], weights=Halpha_flux_2D[val],
-                                   e_data=e_Hab[val], e_weights=e_Halpha_flux_2D[val])
-
-
+val_Hab = (np.isnan(plt_Data) == False)
+fwm_Hab, e_fwm_Hab = weighted_mean(data=plt_Data[val_Hab], weights=Halpha_flux_2D[val_Hab],
+                                   e_data=e_plt_Data[val_Hab], e_weights=e_Halpha_flux_2D[val_Hab])
 print(f"Flux-weighted mean of Ha/Hb flux ratio : {fwm_Hab:.3f} +/- {e_fwm_Hab:.3f}")
+
+# Error map
+plot_2Dmap(plt_Data/e_plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio S/N map", 0.0, 3.0,
+           dir_fig+"Line_ratio_eHab", cmap='rainbow')
 # ----- END: H alpha / H beta flux ratio map ----- #
 
 
-##########
-
-
-
-'''
-plt_Data[plt_Data <= 3*e_Hab] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm H\alpha/H\beta}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-im = ax.imshow(plt_Data, cmap='rainbow',
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-plt.savefig(dir_fig+'Line_ratio_eHab.pdf')
-plt.savefig(dir_fig+'Line_ratio_eHab.png', dpi=300)
-plt.close()
-'''
-
-
 # ----- START: SFR (H alpha) map ----- #
-# Hab = copy.deepcopy(plt_Data)
-Hab = np.ones((plt_Data.shape[0], plt_Data.shape[1]))*fwm_Hab
-EBV_gal = 0.026
-EBV_int_2D = 1.97*np.log10(Hab/2.86)
-k_Halpha = 3.32
-k_V = 4.05
-A_Halpha = k_Halpha * (EBV_int_2D + EBV_gal)
-e_A_Halpha = k_Halpha * 1.97*e_fwm_Hab/(Hab*np.log(10.))
-A_V = (k_V/k_Halpha) * A_Halpha
+def compute_SFR(Ha_flux, Hab_ratio, luminosity_distance,
+                e_Ha_flux=0.0, e_Hab_ratio=0.0, EBV_gal=0.0, apply_C00=True):
+    '''
+    luminosity_distance: [in pc]
+    '''
 
-L_Halpha = 1.0e-15 * flx_Data * 10.0**(0.4*A_Halpha) * (4.0*np.pi*(dist_lum*3.086e+18)**2.0)
-e_L_Halpha = L_Halpha * np.sqrt((e_Halpha_flux_2D/flx_Data)**2. + (e_A_Halpha/A_Halpha)**2.)
-SFR = L_Halpha * 4.6e-42
-e_SFR = e_L_Halpha * 4.6e-42
-SFR[np.isnan(SFR) == True] = 0.
-e_SFR[SFR == 0.] = 0.
+    # Please refer to test_dustlaws.ipynb.
+    if apply_C00:
+        k_Ha, k_Hb, k_V = 3.3248, 4.5965, 4.0522
+    else:  # Cardelli+89 extinction law
+        k_Ha, k_Hb, k_V = 2.5342, 3.6076, 3.1000
+
+    EBV_int = (-2.5 / (k_Ha-k_Hb)) * np.log10(Hab_ratio / 2.86)
+    EBV = EBV_int + EBV_gal
+    A_Ha = k_Ha * EBV
+    e_A_Ha = k_Ha * (-2.5 / (k_Ha-k_Hb)) * e_Hab_ratio/(Hab_ratio*np.log(10.0))
+    A_V = (k_V / k_Ha) * A_Ha
+
+    L_Ha = 1.0e-15 * Ha_flux * 10.0**(0.4*A_Ha) * (4.0*np.pi*(luminosity_distance*3.086e+18)**2.0)
+    e_L_Ha = L_Ha * np.sqrt((e_Ha_flux/Ha_flux)**2. + (e_A_Ha/A_Ha)**2.)
+
+    SFR = L_Ha * 4.6e-42
+    e_SFR = e_L_Ha * 4.6e-42
+    e_SFR[SFR == 0.] = 0.
+
+    return [SFR, e_SFR, A_V]
+
+Hab = np.ones_like(plt_Data) * fwm_Hab    # Assumption (to be revised later)
+EBV_gal = 0.026
+SFR, e_SFR, A_V = compute_SFR(Halpha_flux_2D, Hab, dist_lum, 
+                              e_Halpha_flux_2D, e_fwm_Hab, EBV_gal=EBV_gal, apply_C00=False)
+val_SFR = (SFR > 0.)
+print(f"SFR sum : {np.sum(SFR[val_SFR]):.2f} +/- {np.sqrt(np.sum(e_SFR[val_SFR]**2)):.2f} Mo/yr")
+print(f"V-magnitude extinction : {np.mean(A_V[val_SFR]):.3f} mag")
 
 plt_Data = SFR / (pixel_scale*ang_scale)**2.
 SFRD = plt_Data
 
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle("SFR map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data, [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='gray_r', vmin=v_low, vmax=v_high,
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-cb.set_label(r'Star formation rate density [$M_{\odot}~{\rm yr^{-1}~kpc^{-2}}$]',
-             size=12.0, labelpad=15.0)
-cb.ax.tick_params(labelsize=12.0)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'SFR_Halpha.pdf')
-plt.savefig(dir_fig+'SFR_Halpha.png', dpi=300)
-plt.close()
-
-print(f"SFR sum : {np.sum(SFR):.2f} +/- {np.sqrt(np.sum(e_SFR)):.2f} Mo/yr")
-print(f"V-magnitude extinction : {np.mean(A_V):.3f} mag")
+plot_2Dmap(plt_Data, "SFR map", v_low, v_high,
+           dir_fig+"Map_SFR_Halpha", cmap='gray_r',
+           cb_label=r"SFR density [$M_{\odot}~{\rm yr^{-1}~kpc^{-2}}$]")
 # ----- END: SFR (H alpha) map ----- #r
 
 
@@ -450,7 +385,7 @@ def cal_sfr_disk(regfile):
     pa = pa[0]*np.pi/180.
 
     ap = EAp(positions=[(x0, y0)], a=a, b=b, theta=pa)
-    phot_table = apphot(data=SFR, apertures=ap, error=e_SFR, mask=None)
+    phot_table = apphot(data=SFR, apertures=ap, error=e_SFR, mask=np.logical_not(val_SFR))
 
     return [phot_table['aperture_sum'].data[0], phot_table['aperture_sum_err'].data[0]]
 
@@ -464,126 +399,75 @@ print(f"SFR disk (Gemini) : {SFR_disk_gem:.2f} +/- {e_SFR_disk_gem:.2f} Mo/yr")
 
 
 # ----- START: [NII]6584 / H alpha flux ratio map ----- #
-plt_Data = NII6584_flux_2D / Halpha_flux_2D
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (NII6584_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
+plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, Halpha_flux_2D, NII6584_snr_2D, Halpha_snr_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.9*v_low, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
+plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio map", 0.9*v_low, 1.1*v_high,
+           dir_fig+"Line_ratio_N2Ha", cmap='rainbow')
 
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Line_ratio_N2Ha.pdf')
-plt.savefig(dir_fig+'Line_ratio_N2Ha.png', dpi=300)
-plt.close()
+# Error map
+plot_2Dmap(plt_Data/e_plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio S/N map", 0.0, 3.0,
+           dir_fig+"Line_ratio_eN2Ha", cmap='rainbow')
 # ----- END: [NII]6584 / H alpha flux ratio map ----- #
+
 
 
 # ----- START: Oxygen abundance map ----- #
 N2 = np.log10(plt_Data)
 logOH = 8.743 + 0.462*N2
-plt_Data = logOH
+v_low, v_high = np.percentile(logOH[np.isnan(logOH) == False], [1.0, 99.0])
+plot_2Dmap(logOH, r"${\rm 12+log(O/H)}$ map (N2 method)", 8.1, 8.7,
+           dir_fig+"Map_logOH_1", cmap='rainbow')
 
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm 12+log(O/H)}$ map (N2 method)",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
+# fig, ax = plt.subplots(1, 1, figsize=(8,5))
+# plt.suptitle(r"${\rm 12+log(O/H)}$ map (N2 method)",
+#              x=0.5, ha='center', y=0.96, va='top',
+#              fontsize=20.0)
+# ax.set_xlim([-3.4, 3.4])
+# ax.set_ylim([-2.45, 2.45])
+# ax.set_xticks([-3,-2,-1,0,1,2,3])
+# ax.set_yticks([-2,-1,0,1,2])
+# ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
+# ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
+# ax.set_xlabel('arcsec', fontsize=15.0) 
+# ax.set_ylabel('arcsec', fontsize=15.0)
+# ax.tick_params(width=1.0, length=5.0)
+# for axis in ['top','bottom','left','right']:
+#     ax.spines[axis].set_linewidth(1.0)
 
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=8.1, vmax=8.7, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
+# v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+# im = ax.imshow(plt_Data, cmap='rainbow',
+#                vmin=8.1, vmax=8.7, 
+#                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
+# divider = make_axes_locatable(ax)
+# cax = divider.append_axes("right", size="5%", pad=0.05)
+# cb = plt.colorbar(im, cax=cax)
 
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
+# ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
+# p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
+#               label=r"H${\rm \alpha}$ flux contour")
+# ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+#           handlelength=2.5, frameon=True, borderpad=0.8,
+#           framealpha=0.8, edgecolor='gray')
 
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+# # The orientations
+# x0 = -2.75 ; y0 = 1.25
+# L = 0.6 ; theta0 = gpa*(np.pi/180.0)
+# ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+# ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
 
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
+# # Scale bar
+# kpc5 = 5.0 / ang_scale
+# ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
+#           fc='blueviolet', ec='blueviolet', alpha=0.9)
+# ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
 
-plt.savefig(dir_fig+'Metallicity_logOH.pdf')
-plt.savefig(dir_fig+'Metallicity_logOH.png', dpi=300)
-plt.close()
+# plt.savefig(dir_fig+'Metallicity_logOH.pdf')
+# plt.savefig(dir_fig+'Metallicity_logOH.png', dpi=300)
+# plt.close()
 
 def cal_fwm_logOH(regfile, metal_data):
     metal = copy.deepcopy(metal_data)
@@ -613,9 +497,9 @@ def cal_fwm_logOH(regfile, metal_data):
 
     return [logOH_fwm_disk, logOH_fwm_tail]
 
-# Total
-val = (np.isnan(plt_Data) == False)
-fwm_logOH = np.average(plt_Data[val], weights=flx_Data[val])
+# Flux-weighted mean
+val_N2 = (np.isnan(N2) == False)
+fwm_logOH = weighted_mean(data=logOH[val_N2], weights=Halpha_flux_2D[val_N2])
 print(f"Flux-weighted mean of gas metallicity : {fwm_logOH:.3f}")
 
 # # 1. HST
@@ -627,7 +511,7 @@ logOH_disk_gem, logOH_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", logOH)
 print(f"log OH (Gem) : {logOH_disk_gem:.3f} +/- {logOH_tail_gem:.3f}")
 # ----- END: Oxygen abundance map ----- #
 
-
+'''
 # ----- START: O3N2 map ----- #
 O3N2 = np.log10((OIII5007_flux_2D / Hbeta_flux_2D) * (Halpha_flux_2D / NII6584_flux_2D))
 O3N2[np.isinf(O3N2) == True] = np.nan
@@ -1152,7 +1036,7 @@ plt.close()
 # ----- Saving the results ----- #
 np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
 
-'''
+
 # ----- Applying NebulaBayes ----- #
 import NebulaBayes 
 dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
@@ -1456,5 +1340,4 @@ plt.close()
 '''
 
 # Printing the running time
-print('\n')
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
