@@ -411,63 +411,12 @@ plot_2Dmap(plt_Data/e_plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio S
 
 
 
-# ----- START: Oxygen abundance map ----- #
+# ----- START: Oxygen abundance map (N2 method) ----- #
 N2 = np.log10(plt_Data)
 logOH = 8.743 + 0.462*N2
 v_low, v_high = np.percentile(logOH[np.isnan(logOH) == False], [1.0, 99.0])
 plot_2Dmap(logOH, r"${\rm 12+log(O/H)}$ map (N2 method)", 8.1, 8.7,
-           dir_fig+"Map_logOH_1", cmap='rainbow')
-
-# fig, ax = plt.subplots(1, 1, figsize=(8,5))
-# plt.suptitle(r"${\rm 12+log(O/H)}$ map (N2 method)",
-#              x=0.5, ha='center', y=0.96, va='top',
-#              fontsize=20.0)
-# ax.set_xlim([-3.4, 3.4])
-# ax.set_ylim([-2.45, 2.45])
-# ax.set_xticks([-3,-2,-1,0,1,2,3])
-# ax.set_yticks([-2,-1,0,1,2])
-# ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-# ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-# ax.set_xlabel('arcsec', fontsize=15.0) 
-# ax.set_ylabel('arcsec', fontsize=15.0)
-# ax.tick_params(width=1.0, length=5.0)
-# for axis in ['top','bottom','left','right']:
-#     ax.spines[axis].set_linewidth(1.0)
-
-# v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-# im = ax.imshow(plt_Data, cmap='rainbow',
-#                vmin=8.1, vmax=8.7, 
-#                aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes("right", size="5%", pad=0.05)
-# cb = plt.colorbar(im, cax=cax)
-
-# ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-# p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-#               label=r"H${\rm \alpha}$ flux contour")
-# ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-#           handlelength=2.5, frameon=True, borderpad=0.8,
-#           framealpha=0.8, edgecolor='gray')
-
-# # The orientations
-# x0 = -2.75 ; y0 = 1.25
-# L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-# ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-# ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-#          head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-# ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-# ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# # Scale bar
-# kpc5 = 5.0 / ang_scale
-# ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-#           fc='blueviolet', ec='blueviolet', alpha=0.9)
-# ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# plt.savefig(dir_fig+'Metallicity_logOH.pdf')
-# plt.savefig(dir_fig+'Metallicity_logOH.png', dpi=300)
-# plt.close()
+           dir_fig+"Map_logOH_N2", cmap='rainbow')
 
 def cal_fwm_logOH(regfile, metal_data):
     metal = copy.deepcopy(metal_data)
@@ -489,422 +438,88 @@ def cal_fwm_logOH(regfile, metal_data):
     logOH_fwm_disk = tbl1['aperture_sum'].data[0] / flx_sum_disk
     logOH_fwm_tail = (np.sum(flx_Data[~msk]*metal[~msk]) - tbl1['aperture_sum'].data[0]) / flx_sum_tail
 
-    # one_arr = np.ones_like(metal)
-    # one_arr[metal == 0.] = 0
-    # tbl2 = apphot(data=metal, apertures=ap, mask=None)
-    # logOH_mean_disk = tbl2['aperture_sum'].data[0] / (np.pi*a*b)
-    # logOH_mean_tail = (np.sum(metal) - tbl2['aperture_sum'].data[0]) / (np.sum(one_arr)-np.pi*a*b)
-
     return [logOH_fwm_disk, logOH_fwm_tail]
 
 # Flux-weighted mean
 val_N2 = (np.isnan(N2) == False)
 fwm_logOH = weighted_mean(data=logOH[val_N2], weights=Halpha_flux_2D[val_N2])
-print(f"Flux-weighted mean of gas metallicity : {fwm_logOH:.3f}")
+print(f"Flux-weighted mean of log O/H (N2 method) : {fwm_logOH:.3f}")
 
 # # 1. HST
 # logOH_disk_hst, logOH_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH)
-# print(f"log OH (HST) : {logOH_disk_hst:.3f} +/- {logOH_tail_hst:.3f}")
+# print(f"log O/H (HST, N2 method) : disk - {logOH_disk_hst:.3f}, tail - {logOH_tail_hst:.3f}")
 
 # 2. Gemini
 logOH_disk_gem, logOH_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", logOH)
-print(f"log OH (Gem) : {logOH_disk_gem:.3f} +/- {logOH_tail_gem:.3f}")
-# ----- END: Oxygen abundance map ----- #
+print(f"log O/H (Gemini, N2 method) : disk - {logOH_disk_gem:.3f}, tail - {logOH_tail_gem:.3f}")
+# ----- END: Oxygen abundance map (N2 method) ----- #
 
-'''
+
 # ----- START: O3N2 map ----- #
 O3N2 = np.log10((OIII5007_flux_2D / Hbeta_flux_2D) * (Halpha_flux_2D / NII6584_flux_2D))
-O3N2[np.isinf(O3N2) == True] = np.nan
-plt_Data = 10.**O3N2
-# plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm ([OIII]\lambda 5007/H\beta)\times(H\alpha/[NII]\lambda5007)}$ map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=v_low, vmax=v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Map_O3N2.pdf')
-plt.savefig(dir_fig+'Map_O3N2.png', dpi=300)
-plt.close()
+zero2_cnd = (zero_cnd | (OIII5007_snr_2D < 3.0) | (Hbeta_snr_2D < 3.0) | (NII6584_snr_2D < 3.0))
+O3N2[zero2_cnd] = 0.
+O3N2[((O3N2 == 0.) | (np.isinf(O3N2) == True))] = np.nan
+v_low, v_high = np.percentile(O3N2[np.isnan(O3N2) == False], [1.0, 99.0])
+plot_2Dmap(O3N2, "O3N2 map", v_low, v_high, dir_fig+"Map_O3N2", cmap='rainbow')
 # ----- END: O3N2 map ----- #
 
 
-# ----- START: Oxygen abundance map (2) ----- #
+# ----- START: Oxygen abundance map (O3N2) ----- #
 logOH2 = 8.533-0.214*O3N2
-plt_Data = logOH2
+v_low, v_high = np.percentile(logOH2[np.isnan(logOH2) == False], [1.0, 99.0])
+plot_2Dmap(logOH2, r"${\rm 12+log(O/H)}$ map (O3N2 method)", 8.1, 8.7,
+           dir_fig+"Map_logOH_O3N2", cmap='rainbow')
 
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm 12+log(O/H)}$ map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=8.1, vmax=8.7, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Metallicity_logOH2.pdf')
-plt.savefig(dir_fig+'Metallicity_logOH2.png', dpi=300)
-plt.close()
-
-# Total
-val = (np.isnan(plt_Data) == False)
-fwm_logOH2 = np.average(plt_Data[val], weights=flx_Data[val])
-print(f"Flux-weighted mean of gas metallicity (2) : {fwm_logOH2:.3f}")
+# Flux-weighted mean
+val_O3N2 = (np.isnan(O3N2) == False)
+fwm_logOH2 = weighted_mean(data=logOH2[val_O3N2], weights=Halpha_flux_2D[val_O3N2])
+print(f"Flux-weighted mean of log O/H (O3N2 method) : {fwm_logOH2:.3f}")
 
 # # 1. HST
 # logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
-# print(f"log OH (HST) : {logOH2_disk_hst:.3f} +/- {logOH2_tail_hst:.3f}")
+# print(f"log O/H (HST, O3N2 method) : disk - {logOH2_disk_hst:.3f}, tail - {logOH2_tail_hst:.3f}")
 
 # 2. Gemini
 logOH2_disk_gem, logOH2_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", logOH2)
-print(f"log OH (Gemini) : {logOH2_disk_gem:.3f} +/- {logOH2_tail_gem:.3f}")
-# ----- END: Oxygen abundance map (2) ----- #
+print(f"log O/H (Gemini, O3N2 method) : disk - {logOH2_disk_gem:.3f}, tail - {logOH2_tail_gem:.3f}")
+# ----- END: Oxygen abundance map (O3N2) ----- #
 
 
 # ----- START: [OIII]5007 / H beta flux ratio map ----- #
-plt_Data = OIII5007_flux_2D / Hbeta_flux_2D
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (OIII5007_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm [OIII]\lambda 5007/H\beta}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
+plt_Data, e_plt_Data = get_line_ratio(OIII5007_flux_2D, Hbeta_flux_2D, OIII5007_snr_2D, Hbeta_snr_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.9*v_low, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Line_ratio_O3Hb.pdf')
-plt.savefig(dir_fig+'Line_ratio_O3Hb.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, r"${\rm [OIII]\lambda 5007/H\beta}$ flux ratio map", 0.9*v_low, 1.1*v_high,
+           dir_fig+"Line_ratio_O3Hb", cmap='rainbow')
 # ----- END: [OIII]5007 / H beta flux ratio map ----- #
 
 
 # ----- START: [SII] / H alpha flux ratio map ----- #
-plt_Data = (SII6717_flux_2D + SII6731_flux_2D) / Halpha_flux_2D
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (SII6717_snr_2D < 3.0) | (SII6731_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm [SII]\lambda\lambda 6717,6731/H\alpha}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
+S2_flux = SII6717_flux_2D + SII6731_flux_2D
+S2_snr = S2_flux / np.sqrt(e_SII6717_flux_2D**2 + e_SII6731_flux_2D**2)
+plt_Data, e_plt_Data = get_line_ratio(S2_flux, Halpha_flux_2D, S2_snr, Halpha_snr_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.9*v_low, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Line_ratio_S2Ha.pdf')
-plt.savefig(dir_fig+'Line_ratio_S2Ha.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, r"${\rm [SII]\lambda\lambda 6717,6731/H\alpha}$ flux ratio map",
+           0.9*v_low, 1.1*v_high, dir_fig+"Line_ratio_S2Ha", cmap='rainbow')
 # ----- END: [SII]6731 / H alpha flux ratio map ----- #
 
 
 # ----- START: [SII]6717 / [SII]6731 flux ratio map ----- #
-plt_Data = SII6717_flux_2D / SII6731_flux_2D
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-snr_cnd = ((SII6717_snr_2D < 3.0) | (SII6731_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm [SII]\lambda 6717/[SII]\lambda 6731}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
+plt_Data, e_plt_Data = get_line_ratio(SII6717_flux_2D, SII6731_flux_2D, SII6717_snr_2D, SII6731_snr_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.9*v_low, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Line_ratio_S2S2.pdf')
-plt.savefig(dir_fig+'Line_ratio_S2S2.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, r"${\rm [SII]\lambda 6717/[SII]\lambda 6731}$ flux ratio map", 0.9*v_low, 1.1*v_high,
+           dir_fig+"Line_ratio_S2S2", cmap='rainbow')
 # ----- END: [SII]6717 / [SII]6731 flux ratio map ----- #
 
 
 # ----- START: [NII]6584 / [NII]6548 flux ratio map ----- #
-plt_Data = NII6584_flux_2D / NII6548_flux_2D
-plt_Data[plt_Data == 0.] = np.nan
-plt_Data[np.isinf(plt_Data) == True] = np.nan
-
-snr_cnd = ((NII6548_snr_2D < 3.0) | (NII6584_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
+plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, NII6548_flux_2D, NII6584_snr_2D, NII6548_snr_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=0.9*v_low, vmax=1.1*v_high, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Line_ratio_N2N2.pdf')
-plt.savefig(dir_fig+'Line_ratio_N2N2.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio map", 0.9*v_low, 1.1*v_high,
+           dir_fig+"Line_ratio_N2N2", cmap='rainbow')
 # ----- END: [NII]6584 / [NII]6548 flux ratio map ----- #
 
-
+'''
 # ----- START: BPT diagram ----- #
 x_Dat = np.log10(NII6584_flux_2D/Halpha_flux_2D)
 y_Dat = np.log10(OIII5007_flux_2D/Hbeta_flux_2D)
