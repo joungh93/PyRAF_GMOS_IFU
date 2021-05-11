@@ -235,6 +235,7 @@ for l in np.arange(len(emi_lines)):
     zero2_cnd = (zero_cnd | snr2_cnd)
 
     exec(emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
+    exec("e_"+emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("plt_Data = "+emi_lines[l]+"_flux_2D")
     v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
@@ -361,7 +362,7 @@ SFR, e_SFR, A_V = compute_SFR(Halpha_flux_2D, Hab, dist_lum,
                               e_Halpha_flux_2D, e_fwm_Hab, EBV_gal=EBV_gal, apply_C00=False)
 val_SFR = (SFR > 0.)
 print(f"SFR sum : {np.sum(SFR[val_SFR]):.2f} +/- {np.sqrt(np.sum(e_SFR[val_SFR]**2)):.2f} Mo/yr")
-print(f"V-magnitude extinction : {np.mean(A_V[val_SFR]):.3f} mag")
+print(f"Mean V-magnitude extinction : {np.mean(A_V[val_SFR]):.3f} mag")
 
 plt_Data = SFR / (pixel_scale*ang_scale)**2.
 SFRD = plt_Data
@@ -519,20 +520,31 @@ plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio ma
            dir_fig+"Line_ratio_N2N2", cmap='rainbow')
 # ----- END: [NII]6584 / [NII]6548 flux ratio map ----- #
 
-'''
+
+# ----- Saving the results ----- #
+np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
+df_res1 = pd.Series(data = {"FW-mean vdisp": fwm_vdisp,
+                            "FW-mean Hab": fwm_Hab,
+                            "FW-mean Hab err": e_fwm_Hab,
+                            "SFR total": np.sum(SFR[val_SFR]),
+                            "SFR total err": np.sqrt(np.sum(e_SFR[val_SFR]**2)),
+                            "Mean A_V": np.mean(A_V[val_SFR]),
+                            "SFR disk": SFR_disk_gem,
+                            "SFR disk err": e_SFR_disk_gem})
+
+
+### Additional analysis
+
 # ----- START: BPT diagram ----- #
 x_Dat = np.log10(NII6584_flux_2D/Halpha_flux_2D)
 y_Dat = np.log10(OIII5007_flux_2D/Hbeta_flux_2D)
 
-snr_cnd = ((NII6584_snr_2D < 3.0) | (Halpha_snr_2D < 3.0) | \
+snr2_cnd = ((NII6584_snr_2D < 3.0) | (Halpha_snr_2D < 3.0) | \
            (OIII5007_snr_2D < 3.0) | (Hbeta_snr_2D < 3.0))
-sig_cnd = (Halpha_sigma_2D < lsig_llim)
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-flx_cnd = (Halpha_flux_2D < flx25)
-zero_cnd = (snr_cnd | rchisq_cnd)
+zero2_cnd = (zero_cnd | snr2_cnd)
 
-x_Dat[zero_cnd] = np.nan
-y_Dat[zero_cnd] = np.nan
+x_Dat[zero2_cnd] = np.nan
+y_Dat[zero2_cnd] = np.nan
 
 BPT_SFG = (y_Dat < 1.3+0.61/x_Dat)
 BPT_comp = ((y_Dat > 1.3+0.61/x_Dat) & (y_Dat < 1.19+0.61/(x_Dat-0.47)))
@@ -545,9 +557,7 @@ x_Dat_flat = x_Dat.flatten()
 y_Dat_flat = y_Dat.flatten()
 
 fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle("BPT diagram",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
+plt.suptitle("BPT diagram", x=0.5, ha='center', y=0.96, va='top', fontsize=20.0)
 ax.set_xlim([-1.4, 0.5])
 ax.set_ylim([-1.0, 1.5])
 ax.set_xlabel(r'log([NII]$\lambda$6584/H$\alpha$)', fontsize=15.0) 
@@ -592,9 +602,7 @@ plt.close()
 
 # ----- START: BPT spatial map ----- #
 fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle("The spatial map of the BPT class",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
+plt.suptitle("The spatial map of the BPT class", x=0.5, ha='center', y=0.96, va='top', fontsize=20.0)
 ax.set_xlim([-3.4, 3.4])
 ax.set_ylim([-2.45, 2.45])
 ax.set_xticks([-3,-2,-1,0,1,2,3])
@@ -648,9 +656,6 @@ plt.close()
 # ----- END: BPT spatial map ----- #
 
 
-# ----- Saving the results ----- #
-np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
-
 
 # ----- Applying NebulaBayes ----- #
 import NebulaBayes 
@@ -658,8 +663,6 @@ dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
 from NebulaBayes import NB_Model
 
 # These HII-region optical emission-line fluxes have already been dereddened
-# linelist_NBinput = ["Halpha", "NII6583", "SII6716", "SII6731"]
-# linelist_GEMname = ["Halpha", "NII6584", "SII6717", "SII6731"]
 norm_line = "Halpha"
 linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
 linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
@@ -674,7 +677,7 @@ OUT_DIR = dir_fig+"NB_HII"
 if (glob.glob(OUT_DIR) == []):
     os.system("mkdir "+OUT_DIR)
 else:
-    os.system("rm -rfv "+OUT_DIR+"/*")
+    os.system("rm -rf "+OUT_DIR+"/*")
 
 # Initialize the NB_Model, which loads and interpolates the model flux grids:
 grid_table_file = os.path.join(dir_NB, "grids", "NB_HII_grid.fits.gz")
@@ -728,14 +731,8 @@ fault_bin = []
 # Calculating weight-mean flux ratio in advance
 flx0_Data = copy.deepcopy(Halpha_flux_2D)
 e_flx0_Data = copy.deepcopy(e_Halpha_flux_2D)
-flx0_sum = np.sum(flx0_Data[val])
-e_flx0_sum = np.sqrt(np.sum(e_flx0_Data[val]**2.))
-
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-zero_cnd = (snr_cnd | rchisq_cnd)
-
-plt_Data[zero_cnd] = np.nan
+flx0_sum = np.sum(flx0_Data)
+e_flx0_sum = np.sqrt(np.sum(e_flx0_Data**2.))
 
 wm_ratios, e_wm_ratios = [], []
 for l in linelist_GEMname:
@@ -744,34 +741,23 @@ for l in linelist_GEMname:
     exec("snr_Data = copy.deepcopy("+l+"_snr_2D)")
     
     flx_ratio = flx1_Data / flx0_Data
-    snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (snr_Data < 3.0))
-    rchisq_cnd = (Halpha_rchisq_2D > 50.)
-    zero_cnd = (snr_cnd | rchisq_cnd)
-    flx_ratio[zero_cnd] = 0.
+    snr2_cnd = (snr_Data < 3.0)
+    zero2_cnd = (zero_cnd | snr2_cnd)
+    flx_ratio[zero2_cnd] = 0.
     flx_ratio[flx_ratio == 0.] = np.nan
     flx_ratio[np.isinf(flx_ratio) == True] = np.nan
-    val = (np.isnan(flx_ratio) == False)
-
-    wm = np.average(flx_ratio[val], weights=flx0_Data[val])
-    wm_ratios.append(wm)
-
     e_flx_ratio = flx_ratio * np.sqrt((e_flx0_Data/flx0_Data)**2 + (e_flx1_Data/flx1_Data)**2)
-
-    Aj = (flx0_Data[val]*flx_ratio[val])
-    Cj = Aj/flx0_sum
-    e_Aj = Aj * np.sqrt((e_flx0_Data[val]/flx0_Data[val])**2 + (e_flx_ratio[val]/flx_ratio[val])**2)
-    e_Cj = Cj * np.sqrt((e_Aj/Aj)**2. + (e_flx0_sum/flx0_sum)**2.)
-
-    e_wm = np.sum(e_Cj)
+    val = (np.isnan(flx_ratio) == False)
+    wm, e_wm = weighted_mean(flx_ratio[val], flx0_Data[val], e_data=e_flx_ratio[val], e_weights=e_flx0_Data[val])
+    wm_ratios.append(wm)
     e_wm_ratios.append(e_wm)
 
 # Running NebulaBayse for each Voronoi bin
-snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0) | (NII6584_snr_2D < 3.0))
-rchisq_cnd = (Halpha_rchisq_2D > 50.)
-zero_cnd = (snr_cnd | rchisq_cnd)
+snr2_cnd = (NII6584_snr_2D < 3.0)
+zero2_cnd = (zero_cnd | snr2_cnd)
 
 for i in np.arange(nvbin):
-    if (np.unique(zero_cnd[data_vbin == i])[0] == False):
+    if (np.unique(zero2_cnd[data_vbin == i])[0] == False):
         print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
         obs_fluxes, obs_errs = [], []
         for l in linelist_GEMname:
@@ -825,134 +811,50 @@ for i in np.arange(nvbin):
         fault_bin.append(i)
 
 
-# ----- START: Oxygen abundance map (3) ----- #
+# ----- START: Oxygen abundance map (NebulaBayes, HII) ----- #
 plt_Data = copy.deepcopy(NB_logOH_2D)
 plt_Data[plt_Data == 0] = np.nan
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm 12+log(O/H)}$ map (NebulaBayes)",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=8.1, vmax=8.7, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
+plot_2Dmap(plt_Data, r"${\rm 12+log(O/H)}$ map (NebulaBayes, HII)", 8.1, 8.7,
+           dir_fig+"Map_logOH_NBH2", cmap='rainbow')
 
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Metallicity_logOH3.pdf')
-plt.savefig(dir_fig+'Metallicity_logOH3.png', dpi=300)
-plt.close()
-
-# Total
-val = (np.isnan(plt_Data) == False)
-fwm_logOH3 = np.average(plt_Data[val], weights=flx_Data[val])
-print(f"Flux-weighted mean of gas metallicity (NB) : {fwm_logOH3:.3f}")
+# Flux-weighted mean
+val_NB = (np.isnan(plt_Data) == False)
+fwm_logOH3 = weighted_mean(data=plt_Data[val_NB], weights=Halpha_flux_2D[val_NB])
+print(f"Flux-weighted mean of log O/H (NB, HII) : {fwm_logOH3:.3f}")
 
 # # 1. HST
-# logOH3_disk_hst, logOH3_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", NB_logOH_2D)
-# print(f"log OH (HST) : {logOH3_disk_hst:.3f} +/- {logOH3_tail_hst:.3f}")
+# logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
+# print(f"log O/H (HST, O3N2 method) : disk - {logOH2_disk_hst:.3f}, tail - {logOH2_tail_hst:.3f}")
 
 # 2. Gemini
-logOH3_disk_gem, logOH3_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", NB_logOH_2D)
-print(f"log OH (Gemini) : {logOH3_disk_gem:.3f} +/- {logOH3_tail_gem:.3f}")
-
-# ----- END: Oxygen abundance map (3) ----- #
+logOH3_disk_gem, logOH3_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", plt_Data)
+print(f"log O/H (Gemini, NB, HII) : disk - {logOH3_disk_gem:.3f}, tail - {logOH3_tail_gem:.3f}")
+# ----- END: Oxygen abundance map (NebulaBayes, HII) ----- #
 
 
 # ----- START: Ionization parameter map ----- #
 plt_Data = copy.deepcopy(NB_logU_2D)
 plt_Data[plt_Data == 0] = np.nan
 plt_Data += np.log10(c*1.0e+5)
-
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
-plt.suptitle(r"${\rm log(q)}$ map",
-             x=0.5, ha='center', y=0.96, va='top',
-             fontsize=20.0)
-ax.set_xlim([-3.4, 3.4])
-ax.set_ylim([-2.45, 2.45])
-ax.set_xticks([-3,-2,-1,0,1,2,3])
-ax.set_yticks([-2,-1,0,1,2])
-ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-ax.set_xlabel('arcsec', fontsize=15.0) 
-ax.set_ylabel('arcsec', fontsize=15.0)
-ax.tick_params(width=1.0, length=5.0)
-for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.0)
-
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-im = ax.imshow(plt_Data, cmap='rainbow',
-               vmin=6.8, vmax=7.5, 
-               aspect='equal', extent=[-3.4,3.4,-2.45,2.45])
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-cb = plt.colorbar(im, cax=cax)
-
-ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
-p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
-              label=r"H${\rm \alpha}$ flux contour")
-ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
-          handlelength=2.5, frameon=True, borderpad=0.8,
-          framealpha=0.8, edgecolor='gray')
-
-# The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-# Scale bar
-kpc5 = 5.0 / ang_scale
-ax.arrow(2.0, -1.85, kpc5, 0., width=0.07, head_width=0., head_length=0.,
-          fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(2.1, -2.2, '5 kpc', fontsize=15.0, fontweight='bold', color='blueviolet')
-
-plt.savefig(dir_fig+'Metallicity_logU.pdf')
-plt.savefig(dir_fig+'Metallicity_logU.png', dpi=300)
-plt.close()
+plot_2Dmap(plt_Data, r"${\rm log(q)}$ map (NebulaBayes, HII)", 6.8, 7.5,
+           dir_fig+"Map_logQ_NBH2", cmap='rainbow')
 # ----- END: Ionization parameter map ----- #
-'''
+
+
+# ----- Saving the results ----- #
+np.savez('plot_data2.npz', logOH_1=NB_logOH_2D, logU_1=NB_logU_2D)
+df_res2 = pd.Series(data = {"N2_total": fwm_logOH,
+                            "N2_disk": logOH_disk_gem,
+                            "N2_tail": logOH_tail_gem,
+                            "O3N2_total": fwm_logOH2,
+                            "O3N2_disk": logOH2_disk_gem,
+                            "O3N2_tail": logOH2_tail_gem,
+                            "NBH2_total": fwm_logOH3,
+                            "NBH2_disk": logOH3_disk_gem,
+                            "NBH2_tail": logOH3_tail_gem})
+
 
 # Printing the running time
 print('--- %.4f seconds ---' %(time.time()-start_time))
