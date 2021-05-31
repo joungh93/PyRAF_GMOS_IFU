@@ -1,5 +1,5 @@
 # standard
-(updated on 2021. 4. 29.)
+(updated on 2021. 5. 31.)
 
 ## Description
 Gemini GMOS/IFU reduction for standard star data
@@ -8,7 +8,7 @@ Gemini GMOS/IFU reduction for standard star data
 ## Workflow
 
 ### 1) Initial configurations
-Now move to the directory with standard star data, and check all the list files (`std*.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode. _**For the detailed explanation for the revision, please refer to those comments in the code.**_
+* Now move to the directory with standard star data, and check all the list files (`std*.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode. _**For the detailed explanation for the revision, please refer to those comments in the code.**_
 
 ```
 $ cd standard/
@@ -21,7 +21,7 @@ $ ipython
 ```
 
 ### 2) Verify the MDF
-Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here.
+* Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here.
 
 ```
 > run g1_vmdf.py
@@ -44,13 +44,67 @@ Find apertures for erg[FLAT]_2? ('yes')
 Extract aperture spectra for erg[FLAT]_1? ('NO')
 ```
 
-When running ``g1_vmdf.py``, you should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the missing fibers**_. We have to revise them by revising & running the next code.
+* When running ``g1_vmdf.py``, you should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the missing fibers**_. We have to revise them by revising & running the next code.
 
 ```
 > run rev_mdf.py
+
+Extracting slit 1
+Recenter apertures for erg[FLAT]_1? ('yes')
+Edit apertures for erg[FLAT]_1? ('yes')
+(IRAF graphics displaying... please check the fibers visually.)
+- "w" + "e" (left bottom) + "e" (right top) : zoom-in
+- "w" + "a" : zoom-out
+- "q" : quitting the interactive task
+
+1) If unsatisfied,
+Ctrl+C and revise this code again.
+
+2) If satisfied with the MDF trace results,
+
+Trace apertures for erg[FLAT]_1? ('yes')
+Fit traced positions for erg[FLAT]_1 interactively? ('NO')
+Write apertures for erg[FLAT]_1 to database ('yes')
+Extract aperture spectra for erg[FLAT]_1? ('yes' (IFU-2 slit) / 'NO' (IFU-1 slit))
+--> For the IFU-1 slit, this is the end.
+Review extracted spectra from erg[FLAT]_1? ('NO')
+
+Extracting slit 2
+Find apertures for erg[FLAT]_2? ('yes')
+(...repeating the tasks for slit 2...)
+Extract aperture spectra for erg[FLAT]_1? ('NO')
+--> 'GFEXTRACT exit status: error' message will appear, but it is not a fault.
 ```
 
-###
+### 3) Trace reference (without QE correction)
+* Now the trace reference has to be extracted to define the position of the light on the detector. In the code, you have to check ``pk_line`` is identical throughout the workflow.
 
+```
+> run g2_trace_ref.py
+```
+
+### 4) Wavelength solution
+* This step reduces arc data to produce the wavelength solution. A few interactive tasks are needed here, too.
+
+```
+> run g3_mk_wvsol.py
+
+Examine identifications interactively? (Enter)
+(IRAF graphics of spectrum displaying...)
+"The spectrum window"
+	- "w" + "e" (left bottom) + "e" (right top) : zoom-in
+	- "w" + "a" : zoom-out
+	- "d" :  delete the line
+	- "m" : mark the line
+	- "f" : jump to the parabola window
+	- "q" : quitting the interactive task
+"The parabola window"
+	- "d" : jump to the spectrum window
+	- "f" : fit the line again
+	- "q" : return to the spectrum window
+For the two-slit mode, you have to do the manual check twice.
+Fit dispersion function interactively? (no|yes|NO|YES) ('NO'): Enter
+Output file : erg[ARC].fits, database/aperg[ARC]_[1,2], database/iderg[ARC]_[1,2]
+```
 
 :smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
