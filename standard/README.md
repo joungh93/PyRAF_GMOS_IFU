@@ -21,7 +21,7 @@ $ ipython
 ```
 
 ### 2) Verify the MDF
-* Two Python codes are involved in this step. You have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here.
+* Two Python codes are involved in this step. We have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here.
 
 ```
 > run g1_vmdf.py
@@ -44,7 +44,7 @@ Find apertures for erg[FLAT]_2? ('yes')
 Extract aperture spectra for erg[FLAT]_1? ('NO')
 ```
 
-* When running ``g1_vmdf.py``, you should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the missing fibers**_. We have to revise them by revising & running the next code.
+* When running ``g1_vmdf.py``, we should check if the fibers are well assigned in the flat data. If there are some missing fibers that makes wrong MDF,  _**please take a note of the locations of the missing fibers**_. We have to revise them by revising & running the next code.
 
 ```
 > run rev_mdf.py
@@ -77,7 +77,7 @@ Extract aperture spectra for erg[FLAT]_1? ('NO')
 ```
 
 ### 3) Trace reference (without QE correction)
-* Now the trace reference has to be extracted to define the position of the light on the detector. In the code, you have to check ``pk_line`` is identical throughout the workflow.
+* Now the trace reference has to be extracted to define the position of the light on the detector. In the code, we have to check ``pk_line`` is identical throughout the workflow.
 
 ```
 > run g2_trace_ref.py
@@ -106,5 +106,15 @@ For the two-slit mode, you have to do the manual check twice.
 Fit dispersion function interactively? (no|yes|NO|YES) ('NO'): Enter
 Output file : erg[ARC].fits, database/aperg[ARC]_[1,2], database/iderg[ARC]_[1,2]
 ```
+
+### 5) Reducing the lamp flat
+* First, we have to find the gaps between the fiber bundles. Since the IRAF task ``gffindblocks`` is usually not working properly, we find them manually.
+
+```
+$ jupyter-notebook & (or jupyter-lab &)
+(running the interactive tasks...)
+> run g4_proc_flat.py
+```
+
 
 :smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
