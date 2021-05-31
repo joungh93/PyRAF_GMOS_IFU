@@ -113,8 +113,15 @@ Output file : erg[ARC].fits, database/aperg[ARC]_[1,2], database/iderg[ARC]_[1,2
 ```
 $ jupyter-notebook & (or jupyter-lab &)
 (running the interactive tasks...)
+```
+
+* Next, we run the following code to reduce the flat data.
+```
 > run g4_proc_flat.py
 ```
+
+### 6) Pre-processing of the science frames & Cosmic ray rejection
+* 
 
 
 :smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
