@@ -23,12 +23,12 @@ from matplotlib.gridspec import GridSpec
 from scipy.stats import truncnorm
 from scipy.stats import skew
 from scipy.stats import kurtosis
+from scipy.optimize import curve_fit
 
 
 # ----- Function ----- #
-def gauss_cdf_scale(theta, x):
-    mu, sigma, flux_scale = theta
-    dx = x[1]-x[0]
+def gauss_cdf_scale(x, mu, sigma, flux_scale):
+    dx = x[1] - x[0]
     v1 = erf((x-mu+0.5*dx)/(np.sqrt(2.0)*sigma))
     v2 = erf((x-mu-0.5*dx)/(np.sqrt(2.0)*sigma))
     return flux_scale*(v1-v2)/(2.0*dx)
@@ -36,7 +36,10 @@ def gauss_cdf_scale(theta, x):
 
 # ----- Class ----- #
 class linefit:
-    def __init__(self, wavelength, binned_spectrum, binned_variance, line_numbers, redshift):
+    
+    def __init__(self, wavelength, binned_spectrum, binned_variance, binned_continuum,
+                 line_numbers, redshift, dir_lines,
+                 broad_component=False, data_vbin=None, data_gaussian=None):
 
         '''
         wavelength :
@@ -51,17 +54,23 @@ class linefit:
         A variance data (2D array) after running voronoi 2D binning.
         The array should be the data type of (n_wavelength, n_bin).
 
+        binned_continuum :
+        A continuum data (2D array) after running voronoi 2D binning & continuum fitting.
+        The array should be the data typde of (n_wavelength, n_bin).
+
         line_numbers : 
         A number of line declaration
+        0 : [OII]3727/3729 line
         1 : H beta line
         2 : [OIII]4959/5007 line
         3 : H alpha + [NII]6548/6584 line
         4 : [SII]6717/6731 line
+        5 : [OI]6300 line
         '''
 
         # Basic settings
-        cosmo = FlatLambdaCDM(H0=70.0, Om0=0.3)
-        self.dir_lines = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/lines2/'
+        cosmo = FlatLambdaCDM(H0=70.0, Om0=0.3, Tcmb0=2.725)
+        self.dir_lines = dir_lines
         self.redshift = redshift
         self.lumdist = cosmo.luminosity_distance(self.redshift).value * 1.0e+6  # pc
         self.c = 2.99792e+5  # km/s
@@ -69,6 +78,12 @@ class linefit:
 
         # Line declarations
         self.line_num = line_numbers
+
+        if (line_numbers == 0):
+            self.nlines = 1
+            self.line_names = ['OII3727']
+            self.line_wav = [3727.092]
+            self.wav_fit = [3720.0, 3740.0]
 
         if (line_numbers == 1):
             self.nlines = 1
@@ -86,13 +101,22 @@ class linefit:
             self.nlines = 3
             self.line_names = ['NII6548', 'Halpha', 'NII6584']
             self.line_wav = [6549.86, 6564.61, 6585.27]
-            self.wav_fit = [6545.0, 6590.0]
+            if broad_component:
+                self.wav_fit = [6500.0, 6625.0]
+            else:
+                self.wav_fit = [6540.0, 6595.0]
 
         if (line_numbers == 4):
             self.nlines = 2
             self.line_names = ['SII6717', 'SII6731']
             self.line_wav = [6718.29, 6732.67]
             self.wav_fit = [6710.0, 6740.0]
+
+        if (line_numbers == 5):
+            self.nlines = 1
+            self.line_names = ['OI6300']
+            self.line_wav = [6302.046]
+            self.wav_fit = [6295.0, 6310.0]
 
         # Data
         self.wav_obs = wavelength
@@ -101,38 +125,14 @@ class linefit:
                         np.abs(self.wav_res-self.wav_fit[1]).argmin()]
         self.nbin = binned_spectrum.shape[1]
 
-        # Continuum smoothing & subtraction
-        binned_spec2 = copy.deepcopy(binned_spectrum)
-        g1 = Gaussian1DKernel(stddev = 100)
-
-        wav_msk = np.array([[4850, 4880],  # H beta
-                            [4950, 5020],  # [OIII]4959/5007
-                            [6530, 6610],  # [NII] + H alpha
-                            [6700, 6750]   # [SII]
-                           ])
-        wav_msk = wav_msk*(1.0+self.redshift)
-
-        data0 = np.zeros_like(binned_spectrum)
-        cont0 = np.zeros_like(binned_spectrum)
-        for i in np.arange(self.nbin):
-            clipped, lower, upper = sigmaclip(binned_spectrum[:, i], low=3.0, high=3.0)
-            smooth_cnd = ((binned_spectrum[:, i] >  lower) & \
-                          (binned_spectrum[:, i] <  upper))
-            binned_spec2[:, i][~smooth_cnd] = np.nan
-
-            for j in np.arange(wav_msk.shape[0]):
-                spx_l = np.abs(self.wav_obs-wav_msk[j,0]).argmin()
-                spx_r = np.abs(self.wav_obs-wav_msk[j,1]).argmin()
-                binned_spec2[spx_l:spx_r+1, i] = np.nan
-
-            f1 = convolve(binned_spec2[:, i], g1)
-
-            data0[:, i] = binned_spectrum[:, i] - f1
-            cont0[:, i] = f1
+        # Continuum subtraction
+        data0 = binned_spectrum - binned_continuum
+        vari0 = binned_variance
+        cont0 = binned_continuum
 
         self.dat = data0 * (1.0+self.redshift)
-        self.var = binned_variance * (1.0+self.redshift)**2.0
-        self.cont = cont0
+        self.var = vari0 * (1.0+self.redshift)**2.0
+        self.cont = cont0 * (1.0+self.redshift)
 
         # Reading the spectral resolution fitting results
         par, e_par = np.loadtxt('relation_wav_R.txt').T
@@ -147,13 +147,24 @@ class linefit:
         # lsig_llim = lsig0 - 3.0*e_lsig0
         self.lsig0 = lsig0
         self.lsig_llim = 0.5*self.lsig0
-        self.lsig_ulim = 2.0*self.lsig0
+        if broad_component:
+            self.lsig_ulim = 5.0*self.lsig0
+        else:
+            self.lsig_ulim = 2.0*self.lsig0
 
         # Reading the results of the integrated spectra
         fit_itg = np.genfromtxt('linefit_integrated.txt', dtype=None, encoding='ascii', comments='#',
-                        names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
-                               'R','e_R','flux','e_flux','rchisq'))
+                                names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
+                                       'R','e_R','flux','e_flux','rchisq'))
         self.fit_itg = fit_itg
+
+        if broad_component:
+            self.data_vbin = data_vbin
+            self.data_gaussian = data_gaussian
+            fit_itgb = np.genfromtxt('linefit_integrated_broad.txt', dtype=None, encoding='ascii', comments='#',
+                                     names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
+                                            'R','e_R','flux','e_flux','rchisq','flxsum_scale'))
+            self.fit_itgb = fit_itgb
 
 
     def model_func(self, theta, x):
@@ -197,8 +208,8 @@ class linefit:
         # Specific conditions
         gauss_pdf = lambda X, M, S: np.exp(-0.5*((X-M)/S)**2.)/(S*np.sqrt(2.*np.pi))
 
-        # Line 1: H beta (# of parameters = 3)
-        if (self.line_num == 1):
+        # Line 0, 1, 5: [OII]3727/3729, H beta, [OI]6300 (# of parameters = 3)
+        if (self.line_num in [0, 1, 5]):
             lsig_init = self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[0]].item()
             fprior_sigma = np.log(gauss_pdf(theta[0], lsig_init, 0.1))
 
@@ -268,8 +279,9 @@ class linefit:
 
 
     def solve(self, ibin, check=False, nwalkers=64, ndiscard=5000, nsample=5000,
-              fluct0=1.0e-3, fluct1=1.0e-3, fluct2=1.0e-3):
-        ndim = 2*self.nlines+1
+              fluct0=1.0e-3, fluct1=1.0e-3, fluct2=1.0e-3, broad_component=False):
+
+        ndim = 2*self.nlines+1          
 
         # Initial settings
         nll = lambda *args: -self.log_likelihood(*args)
@@ -277,13 +289,62 @@ class linefit:
         Xfit = self.wav_res[self.spx_fit[0]:self.spx_fit[1]+1]
         Yfit = self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin]
         e_Yfit = np.sqrt(self.var[self.spx_fit[0]:self.spx_fit[1]+1, ibin])
-        
-        # Finding the initial guess
         spec_sum = np.sum(np.abs(Yfit)*(self.wav_res[1]-self.wav_res[0]))
+
+        # Broad component subtraction
+        if broad_component:
+            broad_sum = np.zeros_like(Yfit)
+            indices = np.argwhere(self.data_vbin == ibin)
+            npix = indices.shape[0]
+            
+            if (self.line_num == 3):
+                mgfac = np.sum(self.data_gaussian[indices[:, 0], indices[:, 1]]) / npix
+                if (mgfac < 0.01):
+                    broad_sum += 0.
+                    bfac = 0.
+                else:
+                    Ydat = Yfit / npix
+                    flx_scale0 = np.sum(np.abs(Ydat)*(self.wav_res[1]-self.wav_res[0]))
+
+                    param, lbound, ubound = [], [], []
+                    for j in np.arange(self.nlines):
+                        param += [self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item(),
+                                  self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[j]].item(),
+                                  flx_scale0 / self.nlines]
+                        lbound += [self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()-5.0,
+                                   0.5*self.lsig0, 0.0]
+                        ubound += [self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()+5.0,
+                                   3.0*self.lsig0, flx_scale0]
+                    param += [mgfac]
+                    lbound += [0.0]
+                    ubound += [1.0]
+
+                    bsum0 = np.zeros_like(Yfit)
+                    for b in np.arange(len(self.fit_itgb)):
+                        bsum0 += gauss_cdf_scale(Xfit, self.fit_itgb['mu'][b], self.fit_itgb['lsig'][b], self.fit_itgb['flux'][b])
+                            
+                    model2 = lambda x, *pars: gauss_cdf_scale(x, pars[0], pars[1], pars[2]) + \
+                                              gauss_cdf_scale(x, pars[3], pars[4], pars[5]) + \
+                                              gauss_cdf_scale(x, pars[6], pars[7], pars[8]) + \
+                                              pars[9] * bsum0
+
+                    bsol, bcov = curve_fit(model2, Xfit, Ydat, param,
+                                           bounds=tuple([lbound, ubound]))
+                    # print(bsol)
+                    bfac = bsol[-1]
+                    for b in np.arange(len(self.fit_itgb)):
+                        broad_sum += gauss_cdf_scale(Xfit, self.fit_itgb['mu'][b], self.fit_itgb['lsig'][b], self.fit_itgb['flux'][b]*bfac*npix)
+            
+            else:
+                bfac = 0.
+
+            Yfit = self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin] - broad_sum
+
+        # Finding the initial guess
         initial = np.zeros(ndim)
         initial[0] = self.lsig0
         for j in np.arange(self.nlines):
-            initial[2*j+1] = self.line_wav[j]
+            initial[2*j+1] = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()
             initial[2*j+2] = spec_sum
 
         # Running MCMC
@@ -325,7 +386,6 @@ class linefit:
 
 
         if check:
-
             # Histogram plot
             fig = plt.figure(1, figsize=(10,10))
             gs = GridSpec(3, 3, left=0.05, bottom=0.05, right=0.975, top=0.975,
@@ -352,14 +412,22 @@ class linefit:
             ax.tick_params(axis='both', labelsize=20.0)
             ax.set_xlim([Xfit[0]-25.0, Xfit[-1]+25.0])
             Ydat = self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin]
-            ax.set_ylim([np.min(Ydat)-np.abs(np.max(Ydat)), 1.25*np.abs(np.max(Ydat))])
+            ax.set_ylim([np.min(Ydat)-1.0*np.abs(np.max(Ydat)), 1.25*np.abs(np.max(Ydat))])
             ax.set_xlabel(r"Rest-frame wavelength [${\rm \AA}$]", fontsize=20.0)
             ax.set_ylabel(r"Flux [${\rm 10^{-15}~erg~cm^{-2}~s^{-1}~\AA^{-1}}$]", fontsize=20.0)
             ax.plot(self.wav_res, self.dat[:, ibin], linewidth=3.0, alpha=0.7)
             ax.plot(self.wav_res, self.model_func(popt, self.wav_res), linewidth=3.0, alpha=0.7)
-            ax.plot(self.wav_res, -0.7*np.abs(np.max(Ydat)) + \
-                    self.dat[:, ibin]-self.model_func(popt, self.wav_res),
-                    linewidth=2.5, color='green', alpha=0.6)
+            resi = -0.7*np.abs(np.max(Ydat))+self.dat[:, ibin]-self.model_func(popt, self.wav_res)
+            if broad_component:
+                broad_sum_totwav = np.zeros_like(self.wav_res)
+                for b in np.arange(len(self.fit_itgb)):
+                    broad_totwav = gauss_cdf_scale(self.wav_res, self.fit_itgb['mu'][b],
+                                                   self.fit_itgb['lsig'][b], self.fit_itgb['flux'][b]*bfac*npix)
+                    ax.plot(self.wav_res, broad_totwav,
+                            linewidth=2.5, linestyle='--', color='red', alpha=0.6)
+                    broad_sum_totwav += broad_totwav
+                resi -= broad_sum_totwav
+            ax.plot(self.wav_res, resi, linewidth=2.5, color='green', alpha=0.6)
             plt.savefig(self.dir_lines+f"check/line{self.line_num:d}_fit_bin{ibin:d}.png", dpi=300)
             plt.close()
 
@@ -378,6 +446,11 @@ class linefit:
             rchisq.append(np.sum(chisq[spx_line[0]:spx_line[1]+1]) / dof)
         # rchisq = np.sum(((Yfit-Ymod)/e_Yfit)**2.) / (len(Yfit)-ndim)
 
+        if broad_component:
+            broad = bfac*npix
+        else:
+            broad = 0.0
+
         df = pd.DataFrame(data = {'line': self.line_names,
                                   'mu': popt[1::2],#popt[0::3],
                                   'e_mu': perr[1::2],#perr[0::3],
@@ -394,7 +467,8 @@ class linefit:
                                   'vsig': vsig,
                                   'e_vsig': e_vsig,
                                   'snr': snr,
-                                  'rchisq': rchisq})
+                                  'rchisq': rchisq,
+                                  'broad': broad})
 
         return df
 
@@ -407,7 +481,7 @@ if (__name__ == '__main__'):
     from astropy.io import fits
 
     # ----- Basic parameters ----- #
-    redshift = 0.3527
+    redshift = 0.3033
     dir_vbin = 'vorbin/'
     dir_lines = 'lines2/'
     # os.system('rm -rfv '+dir_lines+'*')
@@ -418,44 +492,29 @@ if (__name__ == '__main__'):
     # wav, sci, var
     data_vbin = fits.getdata(dir_vbin+'vbin.fits').astype('int')
     nvbin = np.unique(data_vbin).size-1
+    # img_g2d = fits.getdata('g2d.fits')
+    img_g2d = fits.getdata('gfac.fits')
 
-    l1 = linefit(vb['wav'], vb['sci'], vb['var'], 1, redshift)
-    l2 = linefit(vb['wav'], vb['sci'], vb['var'], 2, redshift)
-    l3 = linefit(vb['wav'], vb['sci'], vb['var'], 3, redshift)
-    l4 = linefit(vb['wav'], vb['sci'], vb['var'], 4, redshift)
+    # l1 = linefit(vb['wav'], vb['sci'], vb['var'], 1, redshift)
+    # l2 = linefit(vb['wav'], vb['sci'], vb['var'], 2, redshift)
+    l3 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 3, redshift, dir_lines,
+                 broad_component=True, data_vbin=data_vbin, data_gaussian=img_g2d)
+    # l4 = linefit(vb['wav'], vb['sci'], vb['var'], 4, redshift, broad_component=True)
 
-    test_ibin = [0, 1, 2, 3, 4, 88, 91]
+    ibin = 313
 
-    for ibin in test_ibin:
+    df3 = l3.solve(ibin, check=True, nwalkers=50, ndiscard=1000, nsample=1000,
+                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4, broad_component=True)
 
-        df1 = l1.solve(ibin, check=True, nwalkers=50,
-                       ndiscard=1000, nsample=1000,
-                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta1 = df1.values[0, 5]
-        for ln in np.arange(l1.nlines):
-            theta1 = np.append(theta1, df1.values[ln, 1:10:8])
-        print(l1.log_prior(theta1, ibin))
+    theta3 = df3.values[0, 5]
+    for ln in np.arange(l3.nlines):
+        theta3 = np.append(theta3, df3.values[ln, 1:10:8])
+    print(l3.log_prior(theta3, ibin))
+    print()
 
-        df2 = l2.solve(ibin, check=True, nwalkers=50,
-                       ndiscard=1000, nsample=1000,
-                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta2 = df2.values[0, 5]
-        for ln in np.arange(l2.nlines):
-            theta2 = np.append(theta2, df2.values[ln, 1:10:8])
-        print(l2.log_prior(theta2, ibin))
-
-        df3 = l3.solve(ibin, check=True, nwalkers=50,
-                       ndiscard=1000, nsample=1000,
-                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta3 = df3.values[0, 5]
-        for ln in np.arange(l3.nlines):
-            theta3 = np.append(theta3, df3.values[ln, 1:10:8])
-        print(l3.log_prior(theta3, ibin))
-
-        df4 = l4.solve(ibin, check=True, nwalkers=50,
-                       ndiscard=1000, nsample=1000,
-                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta4 = df4.values[0, 5]
-        for ln in np.arange(l4.nlines):
-            theta4 = np.append(theta4, df4.values[ln, 1:10:8])
-        print(l4.log_prior(theta4, ibin))
+    # df4 = l4.solve(ibin, check=True, nwalkers=32,
+    #              ndiscard=3000, nsample=1000, fluct=1.0e-4)
+    # theta4 = df4.values[0, 5]
+    # for ln in np.arange(l4.nlines):
+    #   theta4 = np.append(theta4, df4.values[ln, 1:10:8])
+    # print(l4.log_prior(theta4, ibin))
