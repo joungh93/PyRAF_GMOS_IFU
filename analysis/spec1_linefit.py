@@ -19,7 +19,7 @@ from linefit import linefit
 
 
 # ----- Basic parameters ----- #
-redshift = 0.3527
+redshift = 0.3033
 dir_vbin = 'vorbin/'
 dir_lines = 'lines2/'
 os.system('rm -rfv '+dir_lines+'*')
@@ -28,70 +28,77 @@ os.system('mkdir '+dir_lines+'check/')
 
 # ----- Loading Voronoi binned data ----- #
 vb = np.load(dir_vbin+'vorbin_array.npz')
-# wav, sci, var
+# wav, sci, var, cont
 data_vbin = fits.getdata(dir_vbin+'vbin.fits').astype('int')
 nvbin = np.unique(data_vbin).size-1
+img_g2d = fits.getdata('gfac.fits')
 
 
 # ----- Line fitting ----- #
 
-for num_line in [3]:#[1, 2, 3, 4]:
+for num_line in [3, 4, 5]:
 
-	# Loading linefit class
-	l = linefit(vb['wav'], vb['sci'], vb['var'], num_line, redshift)
+    # Loading linefit class
+    l = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], num_line, redshift, dir_lines,
+                broad_component=True, data_vbin=data_vbin, data_gaussian=img_g2d)
 
-	# 2D data initialization
-	for ln in np.arange(l.nlines):
-		os.system('mkdir '+dir_lines+l.line_names[ln])
-		for col in ['mu', 'sigma', 'flux', 'vsig', 'snr', 'snrpix', 'rchisq']:
-			arr = np.zeros_like(data_vbin, dtype='float')
-			exec(col+f"_{ln:d} = arr")
-			
-	# MCMC fitting of all the bins
-	for ibin in np.arange(nvbin):
-		df = l.solve(ibin, check=True, nwalkers=50,
-			         ndiscard=1000, nsample=1000,
-			         fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-		
-		if (ibin == 0):
-			rchisq0 = np.array([])
-			for ln in np.arange(l.nlines):
-				rchisq0 = np.append(rchisq0, df['rchisq'].values[ln])
+    # 2D data initialization
+    for ln in np.arange(l.nlines):
+        os.system('mkdir '+dir_lines+l.line_names[ln])
+        for col in ['mu', 'sigma', 'flux', 'vsig', 'snr', 'snrpix', 'rchisq',
+                    'e_mu', 'e_vsig']:
+            arr = np.zeros_like(data_vbin, dtype='float')
+            exec(col+f"_{ln:d} = arr")
+            
+    # MCMC fitting of all the bins
+    for ibin in np.arange(5):#np.arange(nvbin):
+        df = l.solve(ibin, check=True, nwalkers=50,
+                     ndiscard=1000, nsample=1000,
+                     fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4,
+                     broad_component=True)
+        
+        if (ibin == 0):
+            rchisq0 = np.array([])
+            for ln in np.arange(l.nlines):
+                rchisq0 = np.append(rchisq0, df['rchisq'].values[ln])
 
-		theta = df.values[0, 5]
-		for ln in np.arange(l.nlines):
-			theta = np.append(theta, df.values[ln, 1:10:8])
+        theta = df.values[0, 5]
+        for ln in np.arange(l.nlines):
+            theta = np.append(theta, df.values[ln, 1:10:8])
 
-		# Solutions to 2D data
-		nvbin_region = (data_vbin == ibin)
-		N_area = np.sum(nvbin_region)
+        # Solutions to 2D data
+        nvbin_region = (data_vbin == ibin)
+        N_area = np.sum(nvbin_region)
 
-		prior_cnd = (np.isinf(l.log_prior(theta, ibin)) == False)
-		sigma_sk_cnd = ((np.abs(df['g1_sigma'].values[0]) < 0.5) & \
-			            (np.abs(df['k1_sigma'].values[0]) < 0.5))
+        prior_cnd = (np.isinf(l.log_prior(theta, ibin)) == False)
+        sigma_sk_cnd = ((np.abs(df['g1_sigma'].values[0]) < 0.5) & \
+                        (np.abs(df['k1_sigma'].values[0]) < 0.5))
 
-		if (prior_cnd & sigma_sk_cnd):
-			exec(f"sigma_{ln:d}[nvbin_region] = df['sigma'].values[ln]")
-			for ln in np.arange(l.nlines):
-				sk_cnd = ((np.abs(df['g1_mu'].values[ln]) < 0.5) & \
-					      (np.abs(df['g1_flux'].values[ln]) < 0.5) & \
-					      (np.abs(df['k1_mu'].values[ln]) < 0.5) & \
-					      (np.abs(df['k1_flux'].values[ln]) < 0.5))
-				if sk_cnd:
-					exec(f"mu_{ln:d}[nvbin_region] = df['mu'].values[ln]")
-					exec(f"sigma_{ln:d}[nvbin_region] = df['sigma'].values[ln]")
-					exec(f"flux_{ln:d}[nvbin_region] = df['flux'].values[ln] / N_area")
-					exec(f"vsig_{ln:d}[nvbin_region] = df['vsig'].values[ln]")
-					exec(f"snr_{ln:d}[nvbin_region] = df['snr'].values[ln]")
-					exec(f"snrpix_{ln:d}[nvbin_region] = df['snr'].values[ln] / np.sqrt(N_area)")
-					exec(f"rchisq_{ln:d}[nvbin_region] = df['rchisq'].values[ln] / rchisq0[ln]")
+        if (prior_cnd & sigma_sk_cnd):
+            exec(f"sigma_{ln:d}[nvbin_region] = df['sigma'].values[ln]")
+            for ln in np.arange(l.nlines):
+                sk_cnd = ((np.abs(df['g1_mu'].values[ln]) < 0.5) & \
+                          (np.abs(df['g1_flux'].values[ln]) < 0.5) & \
+                          (np.abs(df['k1_mu'].values[ln]) < 0.5) & \
+                          (np.abs(df['k1_flux'].values[ln]) < 0.5))
+                if sk_cnd:
+                    exec(f"mu_{ln:d}[nvbin_region] = df['mu'].values[ln]")
+                    exec(f"sigma_{ln:d}[nvbin_region] = df['sigma'].values[ln]")
+                    exec(f"flux_{ln:d}[nvbin_region] = df['flux'].values[ln] / N_area")
+                    exec(f"vsig_{ln:d}[nvbin_region] = df['vsig'].values[ln]")
+                    exec(f"snr_{ln:d}[nvbin_region] = df['snr'].values[ln]")
+                    exec(f"snrpix_{ln:d}[nvbin_region] = df['snr'].values[ln] / np.sqrt(N_area)")
+                    exec(f"rchisq_{ln:d}[nvbin_region] = df['rchisq'].values[ln] / rchisq0[ln]")
+                    exec(f"e_mu_{ln:d}[nvbin_region] = df['e_mu'].values[ln]")
+                    exec(f"e_vsig_{ln:d}[nvbin_region] = df['e_vsig'].values[ln]")
 
-	# Saving the results
-	for ln in np.arange(l.nlines):
-		for col in ['mu', 'sigma', 'flux', 'vsig', 'snr', 'snrpix', 'rchisq']:
-			exec("arr = "+col+f"_{ln:d}")
-			fits.writeto(dir_lines+l.line_names[ln]+'/'+col+'_2D.fits',
-				         arr, overwrite=True)
+    # Saving the results
+    for ln in np.arange(l.nlines):
+        for col in ['mu', 'sigma', 'flux', 'vsig', 'snr', 'snrpix', 'rchisq',
+                    'e_mu', 'e_vsig']:
+            exec("arr = "+col+f"_{ln:d}")
+            fits.writeto(dir_lines+l.line_names[ln]+'/'+col+'_2D.fits',
+                         arr, overwrite=True)
 
 
 # Printing the running time
