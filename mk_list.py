@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct 29 16:53:20 2019
-
 @author: jlee
 """
 
@@ -29,7 +28,7 @@ df = np.genfromtxt('info.txt', dtype=None, encoding='ascii', comments='#',
 	               names=('name','obstype','obsclass','wav0','datalab',
 	               	      'exptime','mask','grating'))
 dlab_id = pd.Series(df['datalab']).str[:-4].values
-seq_num = pd.Series(df['datalab']).str[-3:].values.astype(np.int)
+seq_num = pd.Series(df['datalab']).str[-3:].values.astype('int')
 
 
 # ----- Data classification ----- #
@@ -107,4 +106,3 @@ for i in np.arange(np.sum(arc)):
 		g = open(dir_std+'std_arc.lis','w')
 		g.write(df['name'][arc][i]+'\n')
 		g.close()
-
