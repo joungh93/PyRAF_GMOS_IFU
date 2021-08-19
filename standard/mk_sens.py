@@ -51,7 +51,7 @@ w = hd['CRVAL1'] + np.arange(len(spec_sum))*hd['CD1_1']
 fig, ax = plt.subplots(1, 1, figsize=(7,5))
 plt.subplots_adjust(left=0.16, right=0.96, bottom=0.13, top=0.91)
 plt.suptitle("Sum of spectra", x=0.55, ha='center', y=0.97, va='top',
-	         fontsize=16.0, fontweight='bold')
+             fontsize=16.0, fontweight='bold')
 ax.set_xlabel(r"Wavelength [${\rm \AA}$]", fontsize=12.0)
 ax.set_ylabel("Counts", fontsize=12.0)
 # ax.set_yscale('log')
@@ -88,9 +88,9 @@ iraf.delete(outflux, verify='no')    # Not .fits file
 iraf.imdelete(sensfunc, verify='no')    # .fits file
 
 iraf.gsstandard('astxeqxbrg'+std0, outflux, sensfunc,
-	            starname = ic.starname, observatory = ic.obs_site,
-	            caldir = ic.stardir, extinction = ic.extinction,
-	            fl_inter = 'yes', function = 'chebyshev', order=11)
+                starname = ic.starname, observatory = ic.obs_site,
+                caldir = ic.stardir, extinction = ic.extinction,
+                fl_inter = 'yes', function = 'chebyshev', order=11)
 
 # Store the solution
 os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
