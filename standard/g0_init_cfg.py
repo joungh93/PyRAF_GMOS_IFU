@@ -62,7 +62,7 @@ Directory name of standard star data file
 'onedstds$[subdirectory]/'
 '''
 
-extinction = 'mk_extinct.txt'
+extinction = dir_iraf+'mk_extinct.txt'
 '''
 Extinction file name
 GMOS-N: 'mk_extinct.txt' (needed to be downloaded from Buton+13)
