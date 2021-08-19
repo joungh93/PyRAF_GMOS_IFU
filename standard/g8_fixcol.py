@@ -53,8 +53,9 @@ for i in 1+np.arange(ic.nslit):
         fix_std["slit{0:1d}".format(i)][1].append(0)
     else:
         x0, y0, xs, ys, _ = read_region(regfile, regtype="box")
-        fix_std["slit{0:1d}".format(i)][0].append(int(round(x0[0])))
-        fix_std["slit{0:1d}".format(i)][1].append(int(round(xs[0])))
+        for j in np.arange(len(x0)):
+        	fix_std["slit{0:1d}".format(i)][0].append(int(round(x0[j])))
+        	fix_std["slit{0:1d}".format(i)][1].append(int(round(xs[j])))
 
 
 # ----- Saving masking coordinates in text files ----- #
