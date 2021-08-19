@@ -63,23 +63,6 @@ plt.savefig(ic.caldir+ic.starname+"_specsum.png", dpi=300)
 plt.close()
 
 
-   fig, ax = plt.subplots(1, 1, figsize=(8,5))
-    plt.suptitle(name_elines[l]+" flux map",
-                 x=0.5, ha='center', y=0.96, va='top',
-                 fontsize=20.0)
-    ax.set_xlim([-3.4, 3.4])
-    ax.set_ylim([-2.45, 2.45])
-    ax.set_xticks([-3,-2,-1,0,1,2,3])
-    ax.set_yticks([-2,-1,0,1,2])
-    ax.set_xticklabels([r'$-3$',r'$-2$',r'$-1$',0,1,2,3], fontsize=15.0)
-    ax.set_yticklabels([r'$-2$',r'$-1$',0,1,2], fontsize=15.0)
-    ax.set_xlabel('arcsec', fontsize=15.0) 
-    ax.set_ylabel('arcsec', fontsize=15.0)
-    ax.tick_params(width=1.0, length=5.0)
-    for axis in ['top','bottom','left','right']:
-        ax.spines[axis].set_linewidth(1.0)
-
-
 # Call gsstandard
 outflux = ic.root_name+'std'
 sensfunc = ic.root_name+'sens'
