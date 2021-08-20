@@ -77,6 +77,7 @@ iraf.gsstandard('astxeqxbrg'+std0, outflux, sensfunc,
 
 # Store the solution
 os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
+os.system("rm -rfv tmp*")
 
 
 # Printing the running time
