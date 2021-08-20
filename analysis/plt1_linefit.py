@@ -44,29 +44,17 @@ for i in np.arange(len(emi_lines)):
     exec('dir_'+emi_lines[i]+' = "'+dir_lines+emi_lines[i]+'/"')
 
 # emi_lines
-# ['Halpha',
-#  'Hbeta',
-#  'NII6548',
-#  'NII6584',
-#  'OII3727',
-#  'OIII4959',
-#  'OIII5007',
-#  'SII6717',
-#  'SII6731']
+# ['Halpha', 'Hbeta', 'NII6548', 'NII6584',
+#  'OII3727', 'OIII4959', 'OIII5007',
+#  'SII6717', 'SII6731']
 
-name_elines = [r"${\rm H\alpha}$",
-               r"${\rm H\beta}$",
-               r"${\rm [NII]\lambda6548}$",
-               r"${\rm [NII]\lambda6584}$",
-               r"${\rm [OII]\lambda\lambda3727,3729}$",
-               r"${\rm [OIII]\lambda4959}$",
-               r"${\rm [OIII]\lambda5007}$",
-               r"${\rm [SII]\lambda6717}$",
-               r"${\rm [SII]\lambda6731}$"]
+name_elines = [r"${\rm H\alpha}$", r"${\rm H\beta}$", r"${\rm [NII]\lambda6548}$", r"${\rm [NII]\lambda6584}$",
+               r"${\rm [OII]\lambda\lambda3727,3729}$", r"${\rm [OIII]\lambda4959}$", r"${\rm [OIII]\lambda5007}$",
+               r"${\rm [SII]\lambda6717}$", r"${\rm [SII]\lambda6731}$"]
 
 
 # ----- Basic parameters ----- #
-cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Tcmb0=2.725)
 redshift = 0.3527
 dist_lum = cosmo.luminosity_distance(redshift).value*1.0e+6    # pc
 c = 2.99792e+5    # km/s
@@ -75,7 +63,8 @@ pixel_scale = 0.1    # arcsec/pix
 
 # Angstrom (SDSS)
 wav_lines = [6564.61, 4862.68, 6549.86, 6585.27,
-             3727.092, 4960.295, 5008.240, 6718.29, 6732.67]
+             3727.092, 4960.295, 5008.240,
+             6718.29, 6732.67]
 wav_lines = np.array(wav_lines)
 
 # Spectral resolution & sigma0
@@ -124,8 +113,8 @@ for ibin in np.arange(nvbin):
 
 
 # ----- Creating H alpha contour data ----- #
-X_coord = 0.1*(np.arange(Halpha_flux_2D.shape[1], step=1)-Halpha_flux_2D.shape[1]/2)
-Y_coord = 0.1*(np.arange(Halpha_flux_2D.shape[0], step=1)-Halpha_flux_2D.shape[0]/2)
+X_coord = pixel_scale*(np.arange(Halpha_flux_2D.shape[1], step=1)-Halpha_flux_2D.shape[1]/2)
+Y_coord = pixel_scale*(np.arange(Halpha_flux_2D.shape[0], step=1)-Halpha_flux_2D.shape[0]/2)
 
 flx_Data = copy.deepcopy(Halpha_flux_2D)
 snr_cnd = ((Halpha_snr_2D < 3.0) | (Halpha_snrpix_2D < 5.0))
@@ -139,7 +128,7 @@ flx_cnd = (Halpha_flux_2D < flx25)
 zero_cnd = (snr_cnd | rchisq_cnd)
 
 flx_Data[zero_cnd] = 0.
-sflx = ndimage.gaussian_filter(flx_Data, sigma=(1.2,1.2), order=0)
+sflx = ndimage.gaussian_filter(flx_Data, sigma=(1.25,1.25), order=0)
 
 sig = np.std(sflx)
 lvs = [0.5*sig, 1.*sig, 2.*sig, 3.*sig, 5.*sig, 7.*sig]
@@ -148,10 +137,14 @@ cs = tuple(['gray']*(len(lvs)-1))
 
 
 # ----- Custom functions ----- #
+pltFlags = {'x0':-2.75, 'y0':1.25, 'sign':-1, 'L':0.6, 'theta0':gpa*(np.pi/180.0),
+            'xN':-1.90, 'yN':1.25, 'xE':-2.95, 'yE':2.10, 'legend_position':'lower left'}
+
+
 def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
                add_cb=True, add_ct=True, add_or=True, add_sc=True,
-               cb_label=None, add_legend=True,
-               x0=-2.75, y0=1.25, L=0.6, theta0=gpa*(np.pi/180.0),
+               cb_label=None, add_legend=True, legend_position='lower left',
+               x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
                xN=-1.90, yN=1.25, xE=-2.95, yE=2.10):
 
     fig, ax = plt.subplots(1, 1, figsize=(8,5))
@@ -184,14 +177,14 @@ def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
         if add_legend:
             p0, = ax.plot(-100.0, -100.0, '-', linewidth=2.5, color='gray', alpha=0.6,
                           label=r"H${\rm \alpha}$ flux contour")
-            ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+            ax.legend(handles=[p0], fontsize=13.0, loc=legend_position,
                       handlelength=2.5, frameon=True, borderpad=0.8,
                       framealpha=0.8, edgecolor='gray')
 
     if add_or:
-        ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+        ax.arrow(x0+sign*0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
                  head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-        ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+        ax.arrow(x0, y0+sign*0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
                  head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
         ax.text(xN, yN, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
         ax.text(xE, yE, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
@@ -228,6 +221,21 @@ def weighted_mean(data, weights, e_data=None, e_weights=None):
         res = wm
     
     return res
+
+
+def get_line_ratio(flux1, flux2, snr1, snr2, e_flux1=None, e_flux2=None):
+    # flux1, flux2 : flux data 2D array
+    line_ratio = flux1 / flux2
+    snr2_cnd = ((snr1 < 3.0) | (snr2 < 3.0))
+    zero2_cnd = (zero_cnd | snr2_cnd)
+    line_ratio[zero2_cnd] = 0.
+    line_ratio[line_ratio == 0.] = np.nan
+    line_ratio[np.isinf(line_ratio) == True] = np.nan
+    if ((e_flux1 is not None) & (e_flux2 is not None)):
+        e_line_ratio = line_ratio * np.sqrt((e_flux1/flux1)**2 + (e_flux2/flux2)**2)
+    else:
+        e_line_ratio = np.zeros_like(line_ratio)
+    return [line_ratio, e_line_ratio]
 # ---------------------------- #
 
 
@@ -242,7 +250,7 @@ for l in np.arange(len(emi_lines)):
     v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
                dir_fig+"Map_flux_"+emi_lines[l],
-               cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]')
+               cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]', **pltFlags)
 # ----- END: Flux maps ----- #
 
 
@@ -254,7 +262,7 @@ for l in np.arange(len(emi_lines)):
 
     plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
                dir_fig+"Map_snr_"+emi_lines[l],
-               cb_label="Signal-to-noise ratio per pixel")
+               cb_label="Signal-to-noise ratio per pixel", **pltFlags)
 # ----- END: S/N maps ----- #
 
 
@@ -269,7 +277,7 @@ Rvd = plt_Data
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
            dir_fig+"Map_rv_Halpha", cmap='rainbow',
-           cb_label=r"Relative velocity [${\rm km~s^{-1}}$]")
+           cb_label=r"Relative velocity [${\rm km~s^{-1}}$]", **pltFlags)
 # ----- END: Radial velocity distribution (H alpha) map ----- #
 
 
@@ -280,9 +288,10 @@ plt_Data[zero_cnd] = np.nan
 Vdd = plt_Data
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+
 plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
            dir_fig+"Map_vd_Halpha", cmap='rainbow',
-           cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]")
+           cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]", **pltFlags)
 
 # Flux-weighted mean
 val_vdd = (np.isnan(plt_Data) == False)
@@ -298,25 +307,11 @@ print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
 
 
 # ----- START: H alpha / H beta flux ratio map ----- #
-def get_line_ratio(flux1, flux2, snr1, snr2, e_flux1=None, e_flux2=None):
-    # flux1, flux2 : flux data 2D array
-    line_ratio = flux1 / flux2
-    snr2_cnd = ((snr1 < 3.0) | (snr2 < 3.0))
-    zero2_cnd = (zero_cnd | snr2_cnd)
-    line_ratio[zero2_cnd] = 0.
-    line_ratio[line_ratio == 0.] = np.nan
-    line_ratio[np.isinf(line_ratio) == True] = np.nan
-    if ((e_flux1 is not None) & (e_flux2 is not None)):
-        e_line_ratio = line_ratio * np.sqrt((e_flux1/flux1)**2 + (e_flux2/flux2)**2)
-    else:
-        e_line_ratio = np.zeros_like(line_ratio)
-    return [line_ratio, e_line_ratio]
-
 plt_Data, e_plt_Data = get_line_ratio(Halpha_flux_2D, Hbeta_flux_2D, Halpha_snr_2D, Hbeta_snr_2D,
                                       e_Halpha_flux_2D, e_Hbeta_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio map", 2.86, 1.10*v_high,
-           dir_fig+"Line_ratio_Hab", cmap='rainbow')
+           dir_fig+"Line_ratio_Hab", cmap='rainbow', **pltFlags)
 
 # Flux-weighted mean
 val_Hab = (np.isnan(plt_Data) == False)
@@ -326,7 +321,7 @@ print(f"Flux-weighted mean of Ha/Hb flux ratio : {fwm_Hab:.3f} +/- {e_fwm_Hab:.3
 
 # Error map
 plot_2Dmap(plt_Data/e_plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio S/N map", 0.0, 3.0,
-           dir_fig+"Line_ratio_eHab", cmap='rainbow')
+           dir_fig+"Line_ratio_eHab", cmap='rainbow', **pltFlags)
 # ----- END: H alpha / H beta flux ratio map ----- #
 
 
@@ -372,8 +367,8 @@ SFRD = plt_Data
 v_low, v_high = np.percentile(plt_Data, [1.0, 99.0])
 plot_2Dmap(plt_Data, "SFR map", v_low, v_high,
            dir_fig+"Map_SFR_Halpha", cmap='gray_r',
-           cb_label=r"SFR density [$M_{\odot}~{\rm yr^{-1}~kpc^{-2}}$]")
-# ----- END: SFR (H alpha) map ----- #r
+           cb_label=r"SFR density [$M_{\odot}~{\rm yr^{-1}~kpc^{-2}}$]", **pltFlags)
+# ----- END: SFR (H alpha) map ----- #
 
 
 # ----- START: calculating tail SFR ----- #
@@ -399,6 +394,7 @@ def cal_sfr_disk(regfile):
 # 2. Gemini
 SFR_disk_gem, e_SFR_disk_gem = cal_sfr_disk("GMOS_boundary_1sig.reg")
 print(f"SFR disk (Gemini) : {SFR_disk_gem:.2f} +/- {e_SFR_disk_gem:.2f} Mo/yr")
+# ----- END: calculating tail SFR ----- #
 
 
 # ----- START: [NII]6584 / H alpha flux ratio map ----- #
@@ -406,13 +402,12 @@ plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, Halpha_flux_2D, NII6584_s
                                       e_NII6584_flux_2D, e_Halpha_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio map", 0.9*v_low, 1.1*v_high,
-           dir_fig+"Line_ratio_N2Ha", cmap='rainbow')
+           dir_fig+"Line_ratio_N2Ha", cmap='rainbow', **pltFlags)
 
 # Error map
 plot_2Dmap(plt_Data/e_plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio S/N map", 0.0, 3.0,
-           dir_fig+"Line_ratio_eN2Ha", cmap='rainbow')
+           dir_fig+"Line_ratio_eN2Ha", cmap='rainbow', **pltFlags)
 # ----- END: [NII]6584 / H alpha flux ratio map ----- #
-
 
 
 # ----- START: Oxygen abundance map (N2 method) ----- #
@@ -420,7 +415,7 @@ N2 = np.log10(plt_Data)
 logOH = 8.743 + 0.462*N2
 v_low, v_high = np.percentile(logOH[np.isnan(logOH) == False], [1.0, 99.0])
 plot_2Dmap(logOH, r"${\rm 12+log(O/H)}$ map (N2 method)", 8.1, 8.7,
-           dir_fig+"Map_logOH_N2", cmap='rainbow')
+           dir_fig+"Map_logOH_N2", cmap='rainbow', **pltFlags)
 
 def cal_fwm_logOH(regfile, metal_data):
     metal = copy.deepcopy(metal_data)
@@ -465,7 +460,7 @@ zero2_cnd = (zero_cnd | (OIII5007_snr_2D < 3.0) | (Hbeta_snr_2D < 3.0) | (NII658
 O3N2[zero2_cnd] = 0.
 O3N2[((O3N2 == 0.) | (np.isinf(O3N2) == True))] = np.nan
 v_low, v_high = np.percentile(O3N2[np.isnan(O3N2) == False], [1.0, 99.0])
-plot_2Dmap(O3N2, "O3N2 map", v_low, v_high, dir_fig+"Map_O3N2", cmap='rainbow')
+plot_2Dmap(O3N2, "O3N2 map", v_low, v_high, dir_fig+"Map_O3N2", cmap='rainbow', **pltFlags)
 # ----- END: O3N2 map ----- #
 
 
@@ -473,7 +468,7 @@ plot_2Dmap(O3N2, "O3N2 map", v_low, v_high, dir_fig+"Map_O3N2", cmap='rainbow')
 logOH2 = 8.533-0.214*O3N2
 v_low, v_high = np.percentile(logOH2[np.isnan(logOH2) == False], [1.0, 99.0])
 plot_2Dmap(logOH2, r"${\rm 12+log(O/H)}$ map (O3N2 method)", 8.1, 8.7,
-           dir_fig+"Map_logOH_O3N2", cmap='rainbow')
+           dir_fig+"Map_logOH_O3N2", cmap='rainbow', **pltFlags)
 
 # Flux-weighted mean
 val_O3N2 = (np.isnan(O3N2) == False)
@@ -495,7 +490,7 @@ plt_Data, e_plt_Data = get_line_ratio(OIII5007_flux_2D, Hbeta_flux_2D, OIII5007_
                                       e_OIII5007_flux_2D, e_Hbeta_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [OIII]\lambda 5007/H\beta}$ flux ratio map", 0.9*v_low, 1.1*v_high,
-           dir_fig+"Line_ratio_O3Hb", cmap='rainbow')
+           dir_fig+"Line_ratio_O3Hb", cmap='rainbow', **pltFlags)
 # ----- END: [OIII]5007 / H beta flux ratio map ----- #
 
 
@@ -507,7 +502,7 @@ plt_Data, e_plt_Data = get_line_ratio(S2_flux, Halpha_flux_2D, S2_snr, Halpha_sn
                                       e_Halpha_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [SII]\lambda\lambda 6717,6731/H\alpha}$ flux ratio map",
-           0.9*v_low, 1.1*v_high, dir_fig+"Line_ratio_S2Ha", cmap='rainbow')
+           0.9*v_low, 1.1*v_high, dir_fig+"Line_ratio_S2Ha", cmap='rainbow', **pltFlags)
 # ----- END: [SII]6731 / H alpha flux ratio map ----- #
 
 
@@ -516,7 +511,7 @@ plt_Data, e_plt_Data = get_line_ratio(SII6717_flux_2D, SII6731_flux_2D, SII6717_
                                       e_SII6717_flux_2D, e_SII6731_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [SII]\lambda 6717/[SII]\lambda 6731}$ flux ratio map", 0.9*v_low, 1.1*v_high,
-           dir_fig+"Line_ratio_S2S2", cmap='rainbow')
+           dir_fig+"Line_ratio_S2S2", cmap='rainbow', **pltFlags)
 # ----- END: [SII]6717 / [SII]6731 flux ratio map ----- #
 
 
@@ -525,7 +520,7 @@ plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, NII6548_flux_2D, NII6584_
                                       e_NII6584_flux_2D, e_NII6548_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio map", 0.9*v_low, 1.1*v_high,
-           dir_fig+"Line_ratio_N2N2", cmap='rainbow')
+           dir_fig+"Line_ratio_N2N2", cmap='rainbow', **pltFlags)
 # ----- END: [NII]6584 / [NII]6548 flux ratio map ----- #
 
 
@@ -630,9 +625,9 @@ for i in np.arange(len(BPT_class)):
         c_lo, c_hi = np.min(y_Dat[bpt_data == True])-0.1, np.max(y_Dat[bpt_data == True])+0.1
         for j in np.arange(np.sum(bpt_data == True)):
             c_id = 0.1+(0.9-0.1)*(y_Dat[bpt_data == True][j]-c_lo)/(c_hi-c_lo)
-            rect = plt.Rectangle((-0.1*bpt_data.shape[1]/2 + 0.1*np.argwhere(bpt_data == True)[j,1],
-                                  0.1*bpt_data.shape[0]/2 - 0.1*np.argwhere(bpt_data == True)[j,0]),
-                                 0.1, 0.1, facecolor=cmap(c_id)[:-1], alpha=0.8)
+            rect = plt.Rectangle((-pixel_scale*bpt_data.shape[1]/2 + pixel_scale*np.argwhere(bpt_data == True)[j,1],
+                                  pixel_scale*bpt_data.shape[0]/2 - pixel_scale*np.argwhere(bpt_data == True)[j,0]),
+                                 pixel_scale, pixel_scale, facecolor=cmap(c_id)[:-1], alpha=0.8)
             ax.add_patch(rect)
 
 ax.contour(X_coord, Y_coord[::-1], sflx, levels=lvs, linewidths=lws, colors=cs, alpha=0.6)
@@ -643,14 +638,14 @@ ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
           framealpha=0.8, edgecolor='gray')
 
 # The orientations
-x0 = -2.75 ; y0 = 1.25
-L = 0.6 ; theta0 = gpa*(np.pi/180.0)
-ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
-         head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
-ax.text(-2.95, 2.10, 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
-ax.text(-1.90, 1.25, 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
+ax.arrow(pltFlags['x0']+pltFlags['sign']*0.025, pltFlags['y0'],
+         pltFlags['L']*np.sin(pltFlags['theta0']), pltFlags['L']*np.cos(pltFlags['theta0']),
+         width=0.06, head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.arrow(pltFlags['x0'], pltFlags['y0']+pltFlags['sign']*0.025,
+         -pltFlags['L']*np.cos(pltFlags['theta0']), pltFlags['L']*np.sin(pltFlags['theta0']),
+         width=0.06, head_width=0.18, head_length=0.18, fc='blueviolet', ec='blueviolet', alpha=0.9)
+ax.text(pltFlags['xE'], pltFlags['yE'], 'E', fontsize=15.0, fontweight='bold', color='blueviolet')
+ax.text(pltFlags['xN'], pltFlags['yN'], 'N', fontsize=15.0, fontweight='bold', color='blueviolet')
 
 # Scale bar
 kpc5 = 5.0 / ang_scale
@@ -662,7 +657,6 @@ plt.savefig(dir_fig+'BPT_map.pdf')
 plt.savefig(dir_fig+'BPT_map.png', dpi=300)
 plt.close()
 # ----- END: BPT spatial map ----- #
-
 
 '''
 # ----- Applying NebulaBayes ----- #
