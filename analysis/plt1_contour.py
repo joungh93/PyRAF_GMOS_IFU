@@ -144,7 +144,7 @@ X_coord = pixel_scale*(np.arange(hstimg_2D.shape[1], step=1)-hstimg_2D.shape[1]/
 
 
 # ----- Plotting figure ----- #
-def plot_contour(hst_Data, sflux_Data, out,
+def plot_contour(hst_Data, sflux_Data, out, legend_position='lower left',
                  x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
                  xN=-1.90, yN=1.25, xE=-2.95, yE=2.10):
 
@@ -191,7 +191,7 @@ def plot_contour(hst_Data, sflux_Data, out,
     ax.text(2.1, -2.2, '5 kpc', fontsize=17.5, fontweight='bold', color='yellow')
 
     # Legend
-    ax.legend(handles=[p0], fontsize=13.0, loc='lower left',
+    ax.legend(handles=[p0], fontsize=13.0, loc=legend_position,
               handlelength=2.5, frameon=True, borderpad=0.8,
               framealpha=0.8, edgecolor='gray')
 
@@ -201,7 +201,7 @@ def plot_contour(hst_Data, sflux_Data, out,
     plt.savefig(out+'.png', dpi=300)
     plt.close()
 
-plot_contour(corr_hstimg, sflx, dir_fig+"Halpha_contour",
+plot_contour(corr_hstimg, sflx, dir_fig+"Halpha_contour", legend_position='lower left',
              x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
              xN=-1.90, yN=1.25, xE=-2.95, yE=2.10)
 
