@@ -145,7 +145,7 @@ X_coord = pixel_scale*(np.arange(hstimg_2D.shape[1], step=1)-hstimg_2D.shape[1]/
 
 # ----- Plotting figure ----- #
 def plot_contour(hst_Data, sflux_Data, out,
-                 x0=-2.75, y0=1.25, L=0.6, theta0=gpa*(np.pi/180.0),
+                 x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
                  xN=-1.90, yN=1.25, xE=-2.95, yE=2.10):
 
     fig, ax = plt.subplots(1, 1, figsize=(8,5))
@@ -177,9 +177,9 @@ def plot_contour(hst_Data, sflux_Data, out,
                   label=r"H${\rm \alpha}$ flux contour")
 
     # The orientations
-    ax.arrow(x0-0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
+    ax.arrow(x0+sign*0.025, y0, L*np.sin(theta0), L*np.cos(theta0), width=0.06,
              head_width=0.18, head_length=0.18, fc='yellow', ec='yellow', alpha=0.9)
-    ax.arrow(x0, y0-0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
+    ax.arrow(x0, y0+sign*0.025, -L*np.cos(theta0), L*np.sin(theta0), width=0.06,
              head_width=0.18, head_length=0.18, fc='yellow', ec='yellow', alpha=0.9)
     ax.text(xE, yE, 'E', fontsize=17.5, fontweight='bold', color='yellow')
     ax.text(xN, yN, 'N', fontsize=17.5, fontweight='bold', color='yellow')
@@ -202,7 +202,7 @@ def plot_contour(hst_Data, sflux_Data, out,
     plt.close()
 
 plot_contour(corr_hstimg, sflx, dir_fig+"Halpha_contour",
-             x0=-2.75, y0=1.25, L=0.6, theta0=gpa*(np.pi/180.0),
+             x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
              xN=-1.90, yN=1.25, xE=-2.95, yE=2.10)
 
 
