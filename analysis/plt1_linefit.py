@@ -285,6 +285,7 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 plt_Data = np.sqrt(Halpha_vsig_2D**2.0 - vsig0**2.0)
 # e_plt_Data = np.abs(Halpha_vsig_2D/plt_Data) * e_
 plt_Data[zero_cnd] = np.nan
+plt_Data[((Halpha_vsig_2D > 0.) & (Halpha_vsig_2D <= vsig0))] = 0.
 Vdd = plt_Data
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
@@ -294,7 +295,7 @@ plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
            cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]", **pltFlags)
 
 # Flux-weighted mean
-val_vdd = (np.isnan(plt_Data) == False)
+val_vdd = ((np.isnan(plt_Data) == False) & (plt_Data > 0.))
 fwm_vdisp = weighted_mean(data=plt_Data[val_vdd], weights=Halpha_flux_2D[val_vdd])
 
 # fwm_vdisp = np.average(plt_Data[np.isnan(plt_Data) == False],
