@@ -48,6 +48,7 @@ for i in np.arange(len(emi_lines)):
 #  'Hbeta',
 #  'NII6548',
 #  'NII6584',
+#  'OII3727',
 #  'OIII4959',
 #  'OIII5007',
 #  'SII6717',
@@ -57,6 +58,7 @@ name_elines = [r"${\rm H\alpha}$",
                r"${\rm H\beta}$",
                r"${\rm [NII]\lambda6548}$",
                r"${\rm [NII]\lambda6584}$",
+               r"${\rm [OII]\lambda\lambda3727,3729}$",
                r"${\rm [OIII]\lambda4959}$",
                r"${\rm [OIII]\lambda5007}$",
                r"${\rm [SII]\lambda6717}$",
@@ -73,7 +75,7 @@ pixel_scale = 0.1    # arcsec/pix
 
 # Angstrom (SDSS)
 wav_lines = [6564.61, 4862.68, 6549.86, 6585.27,
-             4960.295, 5008.240, 6718.29, 6732.67]
+             3727.092, 4960.295, 5008.240, 6718.29, 6732.67]
 wav_lines = np.array(wav_lines)
 
 # Spectral resolution & sigma0
@@ -400,7 +402,8 @@ print(f"SFR disk (Gemini) : {SFR_disk_gem:.2f} +/- {e_SFR_disk_gem:.2f} Mo/yr")
 
 
 # ----- START: [NII]6584 / H alpha flux ratio map ----- #
-plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, Halpha_flux_2D, NII6584_snr_2D, Halpha_snr_2D)
+plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, Halpha_flux_2D, NII6584_snr_2D, Halpha_snr_2D,
+                                      e_NII6584_flux_2D, e_Halpha_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio map", 0.9*v_low, 1.1*v_high,
            dir_fig+"Line_ratio_N2Ha", cmap='rainbow')
@@ -488,7 +491,8 @@ print(f"log O/H (Gemini, O3N2 method) : disk - {logOH2_disk_gem:.3f}, tail - {lo
 
 
 # ----- START: [OIII]5007 / H beta flux ratio map ----- #
-plt_Data, e_plt_Data = get_line_ratio(OIII5007_flux_2D, Hbeta_flux_2D, OIII5007_snr_2D, Hbeta_snr_2D)
+plt_Data, e_plt_Data = get_line_ratio(OIII5007_flux_2D, Hbeta_flux_2D, OIII5007_snr_2D, Hbeta_snr_2D,
+                                      e_OIII5007_flux_2D, e_Hbeta_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [OIII]\lambda 5007/H\beta}$ flux ratio map", 0.9*v_low, 1.1*v_high,
            dir_fig+"Line_ratio_O3Hb", cmap='rainbow')
@@ -498,7 +502,9 @@ plot_2Dmap(plt_Data, r"${\rm [OIII]\lambda 5007/H\beta}$ flux ratio map", 0.9*v_
 # ----- START: [SII] / H alpha flux ratio map ----- #
 S2_flux = SII6717_flux_2D + SII6731_flux_2D
 S2_snr = S2_flux / np.sqrt(e_SII6717_flux_2D**2 + e_SII6731_flux_2D**2)
-plt_Data, e_plt_Data = get_line_ratio(S2_flux, Halpha_flux_2D, S2_snr, Halpha_snr_2D)
+plt_Data, e_plt_Data = get_line_ratio(S2_flux, Halpha_flux_2D, S2_snr, Halpha_snr_2D,
+                                      np.sqrt(e_SII6717_flux_2D**2 + e_SII6731_flux_2D**2),
+                                      e_Halpha_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [SII]\lambda\lambda 6717,6731/H\alpha}$ flux ratio map",
            0.9*v_low, 1.1*v_high, dir_fig+"Line_ratio_S2Ha", cmap='rainbow')
@@ -506,7 +512,8 @@ plot_2Dmap(plt_Data, r"${\rm [SII]\lambda\lambda 6717,6731/H\alpha}$ flux ratio 
 
 
 # ----- START: [SII]6717 / [SII]6731 flux ratio map ----- #
-plt_Data, e_plt_Data = get_line_ratio(SII6717_flux_2D, SII6731_flux_2D, SII6717_snr_2D, SII6731_snr_2D)
+plt_Data, e_plt_Data = get_line_ratio(SII6717_flux_2D, SII6731_flux_2D, SII6717_snr_2D, SII6731_snr_2D,
+                                      e_SII6717_flux_2D, e_SII6731_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [SII]\lambda 6717/[SII]\lambda 6731}$ flux ratio map", 0.9*v_low, 1.1*v_high,
            dir_fig+"Line_ratio_S2S2", cmap='rainbow')
@@ -514,7 +521,8 @@ plot_2Dmap(plt_Data, r"${\rm [SII]\lambda 6717/[SII]\lambda 6731}$ flux ratio ma
 
 
 # ----- START: [NII]6584 / [NII]6548 flux ratio map ----- #
-plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, NII6548_flux_2D, NII6584_snr_2D, NII6548_snr_2D)
+plt_Data, e_plt_Data = get_line_ratio(NII6584_flux_2D, NII6548_flux_2D, NII6584_snr_2D, NII6548_snr_2D,
+                                      e_NII6584_flux_2D, e_NII6548_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio map", 0.9*v_low, 1.1*v_high,
            dir_fig+"Line_ratio_N2N2", cmap='rainbow')
@@ -656,7 +664,7 @@ plt.close()
 # ----- END: BPT spatial map ----- #
 
 
-
+'''
 # ----- Applying NebulaBayes ----- #
 import NebulaBayes 
 dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
@@ -664,8 +672,8 @@ from NebulaBayes import NB_Model
 
 # These HII-region optical emission-line fluxes have already been dereddened
 norm_line = "Halpha"
-linelist_NBinput = ["Hbeta", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
-linelist_GEMname = ["Hbeta", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
+linelist_NBinput = ["Hbeta", "OII3729", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
+linelist_GEMname = ["Hbeta", "OII3727", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
 
 df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
 wavlist_NBinput = []
@@ -854,7 +862,7 @@ df_res2 = pd.Series(data = {"N2_total": fwm_logOH,
                             "NBH2_total": fwm_logOH3,
                             "NBH2_disk": logOH3_disk_gem,
                             "NBH2_tail": logOH3_tail_gem})
-
+'''
 
 # Printing the running time
 print('--- %.4f seconds ---' %(time.time()-start_time))
