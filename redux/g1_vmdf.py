@@ -61,8 +61,25 @@ for i in np.arange(len(dir_wav)):
                       slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
                       fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
 
-        iraf.imdelete('erg@'+ic.lst_flat)
-        iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
+        stdflat = np.loadtxt(ic.dir_std+ic.lst_stdflat, dtype=str)
+        stdflat = stdflat.item(0)
+
+        # if (glob.glob(ic.dir_db) == []):
+        #     os.system("mkdir "+ic.dir_db)
+
+        # com_cpdb = "cp -rpv "
+        # com_cpdb += ic.dir_std+ic.dir_db+"aperg"+stdflat+"_1 "
+        # com_cpdb += ic.dir_db+"aperg"+flat0+"_1"
+        # os.system(com_cpdb)
+        # if (ic.nslit == 2):
+        #     com_cpdb2 = "cp -rpv "
+        #     com_cpdb2 += ic.dir_std+ic.dir_db+"aperg"+stdflat+"_2 "
+        #     com_cpdb2 += ic.dir_db+"aperg"+flat0+"_2"
+        #     os.system(com_cpdb2) 
+
+        if (i == 1):           
+            iraf.imdelete('erg@'+ic.lst_flat)
+            iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
 
         # Coming back to current path
         os.chdir(current_dir)
