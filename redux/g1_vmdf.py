@@ -48,9 +48,11 @@ for i in np.arange(len(dir_wav)):
         os.chdir(current_dir+"/"+dir_sci[j])
         iraf.chdir(current_dir+"/"+dir_sci[j])
         
+        # Copying the MDF from standard star
         os.system("rm -rfv "+ic.dir_db+" *.fits tmp*")
         os.system("cp -rpv "+ic.dir_std+ic.nmdf+" .")
 
+        # Verify the MDF from flat data
         flat = np.loadtxt(ic.lst_flat, dtype=str)
         flat0 = flat.item(0)
 
@@ -61,55 +63,26 @@ for i in np.arange(len(dir_wav)):
                       slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
                       fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
 
-        stdflat = np.loadtxt(ic.dir_std+ic.lst_stdflat, dtype=str)
-        stdflat = stdflat.item(0)
+        # Interative tasks for the first science data for each central wavelength
+        if (j == 0):
+            fl_inter = 'yes'
+        else:
+            fl_inter = 'no' 
+        iraf.imdelete('erg@'+ic.lst_flat)
+        iraf.gfextract('rg'+flat0, fl_inter=fl_inter, line=ic.pk_line, exslits=ic.eslit)
 
-        # if (glob.glob(ic.dir_db) == []):
-        #     os.system("mkdir "+ic.dir_db)
-
-        # com_cpdb = "cp -rpv "
-        # com_cpdb += ic.dir_std+ic.dir_db+"aperg"+stdflat+"_1 "
-        # com_cpdb += ic.dir_db+"aperg"+flat0+"_1"
-        # os.system(com_cpdb)
-        # if (ic.nslit == 2):
-        #     com_cpdb2 = "cp -rpv "
-        #     com_cpdb2 += ic.dir_std+ic.dir_db+"aperg"+stdflat+"_2 "
-        #     com_cpdb2 += ic.dir_db+"aperg"+flat0+"_2"
-        #     os.system(com_cpdb2) 
-
-        if (i == 1):           
-            iraf.imdelete('erg@'+ic.lst_flat)
-            iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
+        # Writing aperture file
+        if (ic.nslit == 1):
+            apfile = ['aperg'+flat0+'_1']
+        if (ic.nslit == 2):
+            apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
+        for k in np.arange(len(apfile)):
+            os.system('cp -rpv '+ic.dir_db+apfile[k]+' '+ic.dir_db+apfile[k]+'_old')
 
         # Coming back to current path
         os.chdir(current_dir)
         iraf.chdir(current_dir)     
-
-
-
 '''
-
-os.system('rm -rfv '+ic.dir_db+' *.fits tmp*')
-
-# Copy the MDF
-iraf.copy('gmos$data/'+ic.mdf, '.', verbose='no')
-
-# Extract a flat
-flat = np.loadtxt(ic.lst_flat, dtype=str)
-if (flat.size > 1):
-    raise ValueError("Please check if there is only one flat image for the standard star.")
-flat0 = flat.item(0)
-
-iraf.imdelete('g@'+ic.lst_flat)
-iraf.imdelete('rg@'+ic.lst_flat)
-iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='no', bias=ic.caldir+ic.procbias,
-              fl_over='yes', fl_trim='yes', mdffile=ic.mdf, mdfdir='./',
-              slits=ic.cslit, line=pk_line, fl_fluxcal='no', fl_gscrrej='no',
-              fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='no')
-
-iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=pk_line, exslits=ic.eslit)
-
 ----- Interactive task after gfextract -----
 Extracting slit 1
 Find apertures for erg[FLAT]_1? ('yes')
@@ -132,20 +105,8 @@ Find apertures for erg[FLAT]_2? ('yes')
 Extract aperture spectra for erg[FLAT]_1? ('NO')
 
 --> 'GFEXTRACT exit status: error' message will appear, but it is not a fault.
-
-
-# Writing aperture file
-if (ic.nslit == 1):
-    apfile = ['aperg'+flat0+'_1']
-if (ic.nslit == 2):
-    apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
-for i in np.arange(len(apfile)):
-    os.system('cp -rpv '+ic.dir_db+apfile[i]+' '+ic.dir_db+apfile[i]+'_old')
-
 '''
+
 
 # Printing the running time
 print('--- %.4f seconds ---' %(time.time()-start_time))
-
-
-
