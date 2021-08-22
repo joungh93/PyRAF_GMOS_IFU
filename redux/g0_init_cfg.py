@@ -18,8 +18,18 @@ rawdir = dir_iraf+"raw/"
 caldir = dir_iraf+"calibrations/"
 dir_db = "database/"    # Relative path
 dir_std = dir_iraf+"standard/"
+dir_wav = []    # Central wavelength directory
+for d in sorted(glob.glob("w*")):
+	if os.path.isdir(d):
+		dir_wav.append(d)
+	else:
+		raise ValueError("Please re-check the science directories.")
 
 procbias = 'Mbias.fits'
+
+lst_std = 'std.lis'
+lst_stdarc = 'std_arc.lis'
+lst_stdflat = 'std_flat.lis'
 
 lst_sci = 'sci.lis'
 lst_arc = 'arc.lis'
