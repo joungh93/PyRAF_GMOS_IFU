@@ -49,8 +49,7 @@ if (ic.nslit == 2):
 
 
 # ----- Reading MDF file ----- #
-mdfdata, hdr = fits.getdata(ic.mdf, extn=1, header=True)
-
+mdfdata, hdr = fits.getdata(ic.mdf, ext=1, header=True)
 idx_apr_eff = []
 
 
