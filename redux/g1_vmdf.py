@@ -30,17 +30,10 @@ iraf.unlearn('gfextract')
 
 
 # ---------- Verifying the MDF ---------- #
-dir_wav = sorted(glob.glob("w*"))
-for i in np.arange(len(dir_wav)):
-    if os.path.isdir(dir_wav[i]):
-        pass
-    else:
-        raise ValueError("Please re-check the science directories.")
+for i in np.arange(len(ic.dir_wav)):
+    dir_sci = sorted(glob.glob(ic.dir_wav[i]+"/*"))
 
-for i in np.arange(len(dir_wav)):
-    dir_sci = sorted(glob.glob(dir_wav[i]+"/*"))
-
-    for j in np.arange(1):#np.arange(len(dir_sci)):
+    for j in np.arange(len(dir_sci)):
 
         # Moving each science directory
         name_sci = dir_sci[j].split("/")[-1]
