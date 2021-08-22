@@ -27,97 +27,217 @@ iraf.chdir(current_dir)
 iraf.unlearn('gfextract')
 
 
-# ----- Reading database file ----- #
-flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
-apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
+# ----- Revising the MDF (copy) ----- #
+
+###########################
+########## w6500 ##########
+###########################
+d = ic.dir_wav[0]    # Run every time per central wavelength
+dir_sci = sorted(glob.glob(d+"/*"))
+for j in np.arange(len(dir_sci)):
+    # Moving each science directory
+    name_sci = dir_sci[j].split("/")[-1]
+    print("Moving path for "+name_sci+"...")
+    os.chdir(current_dir+"/"+dir_sci[j])
+    iraf.chdir(current_dir+"/"+dir_sci[j])
+
+    # Reading database file
+    flat = np.loadtxt(ic.lst_flat, dtype=str)
+    flat0 = flat.item(0)
+
+    # Name of aperture file in the database
+    if (ic.nslit == 1):
+        apfile = ['aperg'+flat0+'_1']
+    if (ic.nslit == 2):
+        apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
+
+    # Reading MDF file
+    mdfdata, hdr = fits.getdata(ic.nmdf, ext=1, header=True)
+    idx_apr_eff = []
+
+    # ----- slit-1 ----- #
+    f = open(ic.dir_db+apfile[0]+'_old','r')
+    dbfile = f.readlines()
+    dbfile = np.array(dbfile)
+    f.close()
+    os.system('rm -rfv '+ic.dir_db+apfile[0])
+
+    g = open(ic.dir_db+apfile[0],'w')
+    N_apr = 750
+    idx_lines = np.arange(len(dbfile))
+    for i in np.arange(N_apr):
+        apr_num = i+1
+        apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
+        if (np.sum(apr_lines) == 1):
+            apr_idx = idx_lines[apr_lines][0]
+            n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+            apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
+
+            # ----- START ----- #
+            g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)                   
+            # ----- END ----- #     
+
+    g.close()
+
+    # ----- slit-2 ----- #
+    if (ic.nslit == 2):
+        f = open(ic.dir_db+apfile[1]+'_old','r')
+        dbfile = f.readlines()
+        dbfile = np.array(dbfile)
+        f.close()
+        os.system('rm -rfv '+ic.dir_db+apfile[1])
+
+        g = open(ic.dir_db+apfile[1],'w')
+        N_apr = 750
+        idx_lines = np.arange(len(dbfile))
+        for i in np.arange(N_apr):
+            apr_num = 750+i+1
+            apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
+            if (np.sum(apr_lines) == 1):
+                apr_idx = idx_lines[apr_lines][0]
+                n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+                apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
+
+            # ----- START ----- #
+            g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)   
+            # ----- END ----- #
+
+        g.close()
+
+    # Overwriting new MDF file
+    newmdfdata = copy.deepcopy(mdfdata)
+    bool_apr_eff = np.zeros(len(newmdfdata), dtype=bool)
+    bool_apr_eff[idx_apr_eff] = True
+    newmdfdata['BEAM'][bool_apr_eff] = 1
+    newmdfdata['BEAM'][~bool_apr_eff] = -1
+
+    hdu0 = fits.PrimaryHDU()
+    hdu1 = fits.BinTableHDU()
+    hdu1.data = newmdfdata
+    hdu1.header = hdr
+    hdul = fits.HDUList([hdu0, hdu1])
+    hdul.writeto(ic.nmdf, overwrite=True)
+
+    # Interative tasks for the first science data for each central wavelength
+    if (j == 0):
+        # Verify the MDF again
+        iraf.imdelete('erg@'+ic.lst_flat)
+        iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
+
+    # Coming back to current path
+    os.chdir(current_dir)
+    iraf.chdir(current_dir) 
 
 
-# ----- Reading MDF file ----- #
-mdfdata, hdr = fits.getdata(ic.mdf, extn=1, header=True)
+###########################
+########## w6600 ##########
+###########################
+d = ic.dir_wav[1]    # Run every time per central wavelength
+dir_sci = sorted(glob.glob(d+"/*"))
+for j in np.arange(len(dir_sci)):
+    # Moving each science directory
+    name_sci = dir_sci[j].split("/")[-1]
+    print("Moving path for "+name_sci+"...")
+    os.chdir(current_dir+"/"+dir_sci[j])
+    iraf.chdir(current_dir+"/"+dir_sci[j])
 
-idx_apr_eff = []
+    # Reading database file
+    flat = np.loadtxt(ic.lst_flat, dtype=str)
+    flat0 = flat.item(0)
 
+    # Name of aperture file in the database
+    if (ic.nslit == 1):
+        apfile = ['aperg'+flat0+'_1']
+    if (ic.nslit == 2):
+        apfile = ['aperg'+flat0+'_1', 'aperg'+flat0+'_2']
 
-# ----- slit-1 ----- #
-f = open(ic.dir_db+apfile[0]+'_old','r')
-dbfile = f.readlines()
-dbfile = np.array(dbfile)
-f.close()
-os.system('rm -rfv '+ic.dir_db+apfile[0])
+    # Reading MDF file
+    mdfdata, hdr = fits.getdata(ic.nmdf, ext=1, header=True)
+    idx_apr_eff = []
 
-g = open(ic.dir_db+apfile[0],'w')
-N_apr = 750
-idx_lines = np.arange(len(dbfile))
-for i in np.arange(N_apr):
-	apr_num = i+1
-	apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
-	if (np.sum(apr_lines) == 1):
-		apr_idx = idx_lines[apr_lines][0]
-		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
+    # ----- slit-1 ----- #
+    f = open(ic.dir_db+apfile[0]+'_old','r')
+    dbfile = f.readlines()
+    dbfile = np.array(dbfile)
+    f.close()
+    os.system('rm -rfv '+ic.dir_db+apfile[0])
 
-		# Revise the MDF database
-		if (apr_num >= 50):
-			apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
-			apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
-			apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+1)
-			if ((apr_num == 137) | \
-				(apr_num == 204) | \
-				(apr_num == 449) | \
-				(apr_num == 689) | \
-				(apr_num == 691)):
-				apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+2))
-				apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+2-1], mdfdata['YINST'][apr_num+2-1])+mdfdata['BLOCK'][apr_num+2-1]+'\n'
-				apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+2)
-			g.writelines(apr_info)
-		else:
-			g.writelines(apr_info)
+    g = open(ic.dir_db+apfile[0],'w')
+    N_apr = 750
+    idx_lines = np.arange(len(dbfile))
+    for i in np.arange(N_apr):
+        apr_num = i+1
+        apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
+        if (np.sum(apr_lines) == 1):
+            apr_idx = idx_lines[apr_lines][0]
+            n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+            apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
-		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+            # ----- START ----- #
+            g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)                   
+            # ----- END ----- #     
 
-g.close()
+    g.close()
 
+    # ----- slit-2 ----- #
+    if (ic.nslit == 2):
+        f = open(ic.dir_db+apfile[1]+'_old','r')
+        dbfile = f.readlines()
+        dbfile = np.array(dbfile)
+        f.close()
+        os.system('rm -rfv '+ic.dir_db+apfile[1])
 
-# ----- slit-2 ----- #
-f = open(ic.dir_db+apfile[1]+'_old','r')
-dbfile = f.readlines()
-dbfile = np.array(dbfile)
-f.close()
-os.system('rm -rfv '+ic.dir_db+apfile[1])
+        g = open(ic.dir_db+apfile[1],'w')
+        N_apr = 750
+        idx_lines = np.arange(len(dbfile))
+        for i in np.arange(N_apr):
+            apr_num = 750+i+1
+            apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
+            if (np.sum(apr_lines) == 1):
+                apr_idx = idx_lines[apr_lines][0]
+                n_curve = int(dbfile[apr_idx+17].split('\t')[-1].split('\n')[0])
+                apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
-g = open(ic.dir_db+apfile[1],'w')
-N_apr = 750
-idx_lines = np.arange(len(dbfile))
-for i in np.arange(N_apr):
-	apr_num = 750+i+1
-	apr_lines = (dbfile == '\taperture\t{0:d}\n'.format(apr_num))
-	if (np.sum(apr_lines) == 1):
-		apr_idx = idx_lines[apr_lines][0]
-		apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+28])
+            # ----- START ----- #
+            if (apr_num < 795):
+                apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
+                apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
+                apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+1)                       
+                if ((apr_num == 774)):
+                    apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+2))
+                    apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+2-1], mdfdata['YINST'][apr_num+2-1])+mdfdata['BLOCK'][apr_num+2-1]+'\n'
+                    apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+2)
+                g.writelines(apr_info)
+            else:
+                g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+            # ----- END ----- #
 
-		# Revise the MDF database
-		g.writelines(apr_info)
+        g.close()
 
-		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+    # Overwriting new MDF file
+    newmdfdata = copy.deepcopy(mdfdata)
+    bool_apr_eff = np.zeros(len(newmdfdata), dtype=bool)
+    bool_apr_eff[idx_apr_eff] = True
+    newmdfdata['BEAM'][bool_apr_eff] = 1
+    newmdfdata['BEAM'][~bool_apr_eff] = -1
 
-g.close()
+    hdu0 = fits.PrimaryHDU()
+    hdu1 = fits.BinTableHDU()
+    hdu1.data = newmdfdata
+    hdu1.header = hdr
+    hdul = fits.HDUList([hdu0, hdu1])
+    hdul.writeto(ic.nmdf, overwrite=True)
 
+    # Interative tasks for the first science data for each central wavelength
+    if (j == 0):
+        # Verify the MDF again
+        iraf.imdelete('erg@'+ic.lst_flat)
+        iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
 
-# ----- Overwriting new MDF file ----- #
-newmdfdata = copy.deepcopy(mdfdata)
-bool_apr_eff = np.zeros(len(newmdfdata), dtype=bool)
-bool_apr_eff[idx_apr_eff] = True
-newmdfdata['BEAM'][bool_apr_eff] = 1
-newmdfdata['BEAM'][~bool_apr_eff] = -1
-
-hdu0 = fits.PrimaryHDU()
-hdu1 = fits.BinTableHDU()
-hdu1.data = newmdfdata
-hdu1.header = hdr
-hdul = fits.HDUList([hdu0, hdu1])
-hdul.writeto(ic.nmdf, overwrite=True)
-
-
-# Verify the MDF again
-flat0 = iraf.type(ic.lst_flat, Stdout=1)[0]
-iraf.imdelete('erg@'+ic.lst_flat)
-iraf.gfextract('rg'+flat0, fl_inter='yes', line=1400)
+    # Coming back to current path
+    os.chdir(current_dir)
+    iraf.chdir(current_dir) 
