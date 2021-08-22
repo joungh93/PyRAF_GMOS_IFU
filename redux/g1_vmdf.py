@@ -30,8 +30,8 @@ iraf.unlearn('gfextract')
 
 
 # ---------- Verifying the MDF ---------- #
-for i in np.arange(len(ic.dir_wav)):
-    dir_sci = sorted(glob.glob(ic.dir_wav[i]+"/*"))
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
     for j in np.arange(len(dir_sci)):
 
