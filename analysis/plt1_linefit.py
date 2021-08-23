@@ -284,8 +284,8 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 # ----- START: Velocity dispersion (H alpha) map ----- #
 plt_Data = np.sqrt(Halpha_vsig_2D**2.0 - vsig0**2.0)
 # e_plt_Data = np.abs(Halpha_vsig_2D/plt_Data) * e_
-plt_Data[zero_cnd] = np.nan
 plt_Data[((Halpha_vsig_2D > 0.) & (Halpha_vsig_2D <= vsig0))] = 0.
+plt_Data[zero_cnd] = np.nan
 Vdd = plt_Data
 
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
