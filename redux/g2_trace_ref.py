@@ -30,23 +30,33 @@ iraf.unlearn('gfdisplay')
 
 
 # ---------- Trace reference ---------- #
-iraf.imdelete('g@'+ic.lst_flat)
-iraf.imdelete('rg@'+ic.lst_flat)
-iraf.imdelete('erg@'+ic.lst_flat)
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-for flat in iraf.type(ic.lst_flat, Stdout=1):
-	flat = flat.strip()
-	iraf.gfreduce(flat, rawpath=ic.rawdir, fl_extract='yes', bias=ic.bias,
-                  fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
-                  slits='both', line=1400, fl_fluxcal='no', fl_gscrrej='no',
-                  fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='yes')
+    for j in np.arange(len(dir_sci)):
 
-os.system('ds9 &')
-iraf.sleep(5.0)
-for flat in iraf.type(ic.lst_flat, Stdout=1):
-    flat = flat.strip()
-    iraf.gfdisplay('erg'+flat, 1)
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
+
+        # Trace reference from flat data
+        flat = np.loadtxt(ic.lst_flat, dtype=str)
+        flat0 = flat.item(0)
+
+        iraf.imdelete('g@'+ic.lst_flat)
+        iraf.imdelete('rg@'+ic.lst_flat)
+        iraf.imdelete('erg@'+ic.lst_flat)
+        iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='yes', bias=ic.caldir+ic.procbias,
+                      fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
+                      slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
+                      fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='yes')
+
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)     
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
