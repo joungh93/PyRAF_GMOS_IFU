@@ -30,35 +30,42 @@ iraf.unlearn('gfscatsub')
 
 
 # ---------- Pre-processing of the science frames ---------- #
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-# MDF, bias, and overscan
-iraf.imdelete('g@'+ic.lst_sci)
-iraf.imdelete('rg@'+ic.lst_sci)
+    for j in np.arange(len(dir_sci)):
 
-iraf.gfreduce('@'+ic.lst_sci, rawpath=ic.rawdir, fl_extract='no',
-	            bias=ic.bias, fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
-              slits='both', line=1400, fl_fluxcal='no', fl_gscrrej='no',
-              fl_wavtran='no', fl_skysub='no', fl_vardq='yes', fl_inter='no')
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
 
+        # MDF, bias, and overscan
+        iraf.imdelete('g@'+ic.lst_sci)
+        iraf.imdelete('rg@'+ic.lst_sci)
+        iraf.gfreduce('@'+ic.lst_sci, rawpath=ic.rawdir, fl_extract='no',
+                      bias=ic.caldir+ic.procbias, fl_over='yes', fl_trim='yes',
+                      mdffile=ic.nmdf, mdfdir='./',
+                      slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
+                      fl_wavtran='no', fl_skysub='no', fl_vardq='yes', fl_inter='no')
 
-# Scattered light
-blkmsk_ref = 'newblkmask_S20190228S0015_hdr01'
+        # Scattered light
+        blkmsk = np.loadtxt("blkmask_name.txt", dtype=str)
+        blkmsk0 = blkmsk.item(0)
 
-iraf.imdelete('brg@'+ic.lst_sci)
+        sci = np.loadtxt(ic.lst_sci, dtype=str)
+        sci0 = sci.item(0)
 
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.gfscatsub('rg'+sci, blkmsk_ref, outimage='', prefix='b',
-                   xorder='3,3,3,3,3,3,3,3,3,3,3,3',
-                   yorder='3,3,3,3,3,3,3,3,3,3,3,3',
-                   cross='yes', fl_inter='no')
+        iraf.imdelete('brg@'+ic.lst_sci)
+        iraf.gfscatsub('rg'+sci0, blkmsk0, outimage='', prefix='b',
+                       xorder='3,3,3,3,3,3,3,3,3,3,3,3',
+                       yorder='3,3,3,3,3,3,3,3,3,3,3,3',
+                       cross='yes', fl_inter='no')
 
-# os.system('ds9 &')
-# iraf.sleep(5.0)
-# for sci in iraf.type(ic.lst_sci, Stdout=1):
-#     sci = sci.strip()
-#     for i in range(12):
-#         iraf.imexamine('brg'+sci+'[sci,'+str(i+1)+']', 1)
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)          
 
 
 # Printing the running time
