@@ -29,21 +29,30 @@ iraf.unlearn('gemcrspec')
 
 
 # ---------- Cosmic ray rejection ---------- #
-iraf.imdelete('xbrg@'+ic.lst_sci)
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.gemcrspec('brg'+sci, 'xbrg'+sci, logfile='crrej.log',
-                   key_gain='GAIN', key_ron='RDNOISE', xorder=9,
-                   yorder=-1, sigclip=4.5, sigfrac=0.5, objlim=1.,
-                   niter=4, verbose='yes', fl_vardq='yes')
+    for j in np.arange(len(dir_sci)):
 
-# os.system('ds9 &')
-# iraf.sleep(5.0)
-# for sci in iraf.type(ic.lst_sci, Stdout=1):
-#     sci = sci.strip()
-#     for i in range(12):
-#         iraf.imexamine('xbrg'+sci+'[sci,'+str(i+1)+']', 1)
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
+
+        # Running gemcrspec
+        sci = np.loadtxt(ic.lst_sci, dtype=str)
+        sci0 = sci.item(0)
+
+        iraf.imdelete('xbrg@'+ic.lst_sci)
+        iraf.gemcrspec('brg'+sci0, 'xbrg'+sci0, logfile='crrej.log',
+                       key_gain='GAIN', key_ron='RDNOISE', xorder=9,
+                       yorder=-1, sigclip=4.5, sigfrac=0.5, objlim=1.,
+                       niter=4, verbose='yes', fl_vardq='yes')
+
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)          
 
 
 # Printing the running time
