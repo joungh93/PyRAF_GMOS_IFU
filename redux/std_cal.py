@@ -27,17 +27,36 @@ iraf.chdir(current_dir)
 
 
 # ----- Spectrophotometric calibration ----- #
-iraf.imdelete('cstxeqxbrg@'+ic.lst_sci, verify='no')
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-	sci = sci.strip()
-	iraf.gscalibrate('stxeqxbrg'+sci, sfunction=ic.caldir+ic.sensfunc,
-		             obs=ic.obs_site, extinction=ic.extinction,
-		             fl_ext='yes', fl_vardq='yes')
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-os.system('ds9 &')
-iraf.sleep(5.0)
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-	iraf.gfdisplay('cstxeqxbrg'+sci, 1, version=1)
+    for j in np.arange(len(dir_sci)):
+
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
+
+        # SCI
+        sci = np.loadtxt(ic.lst_sci, dtype=str)
+        sci0 = sci.item(0)
+
+        # Flux calibration
+        iraf.imdelete('cstxeqxbrg@'+ic.lst_sci, verify='no')
+        iraf.gscalibrate('stxeqxbrg'+sci0, sfunction=ic.caldir+ic.sensfunc,
+                         obs=ic.obs_site, extinction=ic.extinction,
+                         fl_ext='yes', fl_vardq='yes')        
+
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)  
+
+
+# os.system('ds9 &')
+# iraf.sleep(5.0)
+# for sci in iraf.type(ic.lst_sci, Stdout=1):
+#   iraf.gfdisplay('cstxeqxbrg'+sci, 1, version=1)
 
 
 # Printing the running time
