@@ -30,56 +30,38 @@ iraf.unlearn('gfskysub')
 
 
 # ---------- Rectify the spectra ---------- #
-from astropy.io import fits
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-# Angstroms per pixel
-arc0 = iraf.type(ic.lst_arc, Stdout=1)[0].strip()
+    for j in np.arange(len(dir_sci)):
 
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.imdelete('txeqxbrg'+sci, verify='no')
-    iraf.gftransform('xeqxbrg'+sci, wavtraname='erg'+arc0, fl_vardq='no')
-    fits.open('txeqxbrg'+sci+'.fits').info()
-    dat, hdr = fits.getdata('txeqxbrg'+sci+'.fits', ext=2, header=True)
-    dw = float(hdr['CD1_1'])
-    print('dw : {0:f}'.format(dw))
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
 
+        # SCI & ARC
+        sci = np.loadtxt(ic.lst_sci, dtype=str)
+        sci0 = sci.item(0)
 
-# # Stop point #1 
-# import sys
-# sys.exit("Please check 'dw'.")
+        arc = np.loadtxt(ic.lst_arc, dtype=str)
+        arc0 = arc.item(0)
 
+        # Rectify the spectra
+        iraf.imdelete('txeqxbrg@'+ic.lst_sci, verify='no')
+        iraf.gftransform('xeqxbrg'+sci0, wavtraname='erg'+arc0, fl_vardq='yes')
 
-# Rectify
-dw = 1.93
+        # Sky subtraction
+        iraf.imdelete('stxeqxbrg@'+ic.lst_sci, verify='no')
+        iraf.gfskysub('txeqxbrg'+sci0, fl_inter='no', combine='median', sepslits='yes')
 
-iraf.imdelete('txeqxbrg@'+ic.lst_sci)
+        ds9_comm = "ds9 -scalemode zscale -scale lock yes -frame lock image "
+        os.system(ds9_comm+"txeqxbrg"+sci0+".fits[2] stxeqxbrg"+sci0+".fits[2] &")
 
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.gftransform('xeqxbrg'+sci, wavtraname='erg'+arc0, dw=dw, fl_vardq='yes')
-
-# os.system('ds9 &')
-# iraf.sleep(5.0)
-# for sci in iraf.type(ic.lst_sci, Stdout=1):
-#     sci = sci.strip()
-#     iraf.display('txeqxbrg'+sci+'.fits[sci,1]', 1)
-
-
-# ---------- Sky subtraction ---------- #
-iraf.imdelete('stxeqxbrg@'+ic.lst_sci, verify='no')
-
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.gfskysub('txeqxbrg'+sci, fl_inter='no',
-                  combine='median', sepslits='yes')
-
-os.system('ds9 &')
-iraf.sleep(5.0)
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-    sci = sci.strip()
-    iraf.display('txeqxbrg'+sci+'[sci,1]', 1)
-    iraf.display('stxeqxbrg'+sci+'[sci,1]', 2)
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)  
 
 
 # Printing the running time
