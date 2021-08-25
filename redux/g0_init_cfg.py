@@ -85,7 +85,7 @@ GMOS-N: 'mk_extinct.txt' (needed to be downloaded from Buton+13)
 GMOS-S: 'onedstds$ctioextinct.dat'
 '''
 
-root_name = starname+'_650_20210408_'
+sensfunc = starname+'_650_20210408_sens'
 '''
 Output file name for sensitivity function
 (i.e. [starname]_[centwave]_[obsdate]_)
