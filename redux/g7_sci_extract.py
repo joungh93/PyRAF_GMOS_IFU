@@ -13,6 +13,7 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import g0_init_cfg as ic
+from astropy.io import fits
 
 
 # ----- Importing IRAF from the root directory ----- #
@@ -64,34 +65,35 @@ for d in ic.dir_wav:
                        trace='no', reference='eqbrg'+flat0, weights='none',
                        fl_vardq='yes', line=ic.pk_line)        
 
+        # Displaying the extracted data for checking bad columns
+        if (glob.glob("badcol/") == []):
+            os.system("mkdir badcol")
+        # ---> making a directory for bad column masking region files
+        # ("badcol/sci{}_slit{}.reg", with DS9 saoimage format)
+
+        dt1, hd1 = fits.getdata('eqxbrg'+sci0+'.fits', ext=2, header=True)
+        z1l, z1u = np.percentile(dt1, [15, 85])
+        # 2-slit mode
+        if (ic.nslit == 2):
+            dt2, hd2 = fits.getdata('eqxbrg'+sci0+'.fits', ext=5, header=True)
+            z2l, z2u = np.percentile(dt2, [15, 85])
+
+        if (ic.nslit == 1):
+            z1, z2 = z1l, z1u
+            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] -multiframe"
+            ds9_loc = " -scale lock yes -frame lock image"
+            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+        if (ic.nslit == 2):
+            z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
+            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] eqxbrg"+sci0+".fits[5] -multiframe"
+            ds9_loc = " -scale lock yes -frame lock image"
+            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+
+        os.system(ds9_frm + ds9_loc + ds9_scl)
+
         # Coming back to current path
         os.chdir(current_dir)
         iraf.chdir(current_dir) 
-
-
-
-# flat0 = iraf.type(ic.lst_flat, Stdout=1)[0].strip()
-# response = flat0+'_resp'
-# ref_flat0 = 'eqbrg'+flat0
-
-# arc0 = iraf.type(ic.lst_arc, Stdout=1)[0].strip()
-
-# iraf.imdelete('qxbrg@'+ic.lst_sci)
-# iraf.imdelete('eqxbrg@'+ic.lst_sci)
-
-# for sci in iraf.type(ic.lst_sci, Stdout=1):
-#     sci = sci.strip()
-#     iraf.gqecorr('xbrg'+sci, refimage='erg'+arc0, fl_correct='yes',
-#                  fl_vardq='yes', verbose='yes')
-#     iraf.gfextract('qxbrg'+sci, response=response, recenter='no',
-#                    trace='no', reference=ref_flat0, weights='none',
-#                    fl_vardq='yes', line=1400)
-
-# os.system('ds9 &')
-# iraf.sleep(5.0)
-# for sci in iraf.type(ic.lst_sci, Stdout=1):
-# 	sci = sci.strip()
-# 	iraf.gfdisplay('eqxbrg'+sci, 1)
 
 
 # Printing the running time
