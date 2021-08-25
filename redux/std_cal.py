@@ -25,6 +25,8 @@ from pyraf.iraf import gemini, gmos
 os.chdir(current_dir)
 iraf.chdir(current_dir)
 
+iraf.unlearn('gscalibrate')
+
 
 # ----- Spectrophotometric calibration ----- #
 for d in ic.dir_wav:
