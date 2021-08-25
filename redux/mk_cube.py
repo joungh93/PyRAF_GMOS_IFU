@@ -47,12 +47,12 @@ for d in ic.dir_wav:
         sci0 = sci.item(0)
 
         # Running gfcube
-		iraf.imdelete('cstxeqxbrg'+sci0+'_3D', verify='no')
-		iraf.gfcube('cstxeqxbrg'+sci0, outimage='cstxeqxbrg'+sci0+'_3D',
-			        fl_atmdisp='yes', fl_var='yes', fl_dq='yes')
+        iraf.imdelete('cstxeqxbrg'+sci0+'_3D', verify='no')
+        iraf.gfcube('cstxeqxbrg'+sci0, outimage='cstxeqxbrg'+sci0+'_3D',
+                    fl_atmdisp='yes', fl_var='yes', fl_dq='yes')
 
-		fits.open('cstxeqxbrg'+sci0+'_3D.fits').info()
-		os.system('ds9 cstxeqxbrg'+sci0+'_3D.fits[sci] &')
+        fits.open('cstxeqxbrg'+sci0+'_3D.fits').info()
+        os.system('ds9 cstxeqxbrg'+sci0+'_3D.fits[sci] &')
 
         # Coming back to current path
         os.chdir(current_dir)
