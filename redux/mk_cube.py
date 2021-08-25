@@ -31,15 +31,32 @@ iraf.unlearn('gfcube')
 # ----- Create the cubes ----- #
 from astropy.io import fits
 
-for sci in iraf.type(ic.lst_sci, Stdout=1):
-	sci = sci.strip()
-	iraf.imdelete('cstxeqxbrg'+sci+'_3D', verify='no')
-	iraf.gfcube('cstxeqxbrg'+sci, outimage='cstxeqxbrg'+sci+'_3D',
-		        fl_atmdisp='yes', fl_var='yes', fl_dq='yes')
+for d in ic.dir_wav:
+    dir_sci = sorted(glob.glob(d+"/*"))
 
-	fits.open('cstxeqxbrg'+sci+'_3D.fits').info()
+    for j in np.arange(len(dir_sci)):
 
-	os.system('ds9 cstxeqxbrg'+sci+'_3D.fits[sci] &')
+        # Moving each science directory
+        name_sci = dir_sci[j].split("/")[-1]
+        print("Moving path for "+name_sci+"...")
+        os.chdir(current_dir+"/"+dir_sci[j])
+        iraf.chdir(current_dir+"/"+dir_sci[j])
+
+        # SCI
+        sci = np.loadtxt(ic.lst_sci, dtype=str)
+        sci0 = sci.item(0)
+
+        # Running gfcube
+		iraf.imdelete('cstxeqxbrg'+sci0+'_3D', verify='no')
+		iraf.gfcube('cstxeqxbrg'+sci0, outimage='cstxeqxbrg'+sci0+'_3D',
+			        fl_atmdisp='yes', fl_var='yes', fl_dq='yes')
+
+		fits.open('cstxeqxbrg'+sci0+'_3D.fits').info()
+		os.system('ds9 cstxeqxbrg'+sci0+'_3D.fits[sci] &')
+
+        # Coming back to current path
+        os.chdir(current_dir)
+        iraf.chdir(current_dir)  
 
 
 # Printing the running time
