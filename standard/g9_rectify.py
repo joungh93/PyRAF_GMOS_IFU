@@ -13,7 +13,6 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import g0_init_cfg as ic
-from astropy.io import fits
 
 
 # ----- Importing IRAF from the root directory ----- #
