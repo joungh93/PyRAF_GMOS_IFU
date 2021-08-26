@@ -120,8 +120,19 @@ $ jupyter-notebook & (or jupyter-lab &)
 > run g4_proc_flat.py
 ```
 
-### 5) Pre-processing of the science frames & Cosmic ray rejection
-* 
+### 5) Pre-processing of the science frames
+* Using the master bias and the MDF we defined in the previous steps, we then pre-process the science frames of each science data. After running ``gfreduce``, we subtract the scattered light in the fiber gaps with ``gfscatsub``.
+```
+> run g5_preproc.py
+```
+
+### 6) Cosmic ray rejection
+* We remove the cosmic ray of science frames using ``gemcrspec``.
+```
+> run g6_crrej.py
+```
+
+### 7) 
 
 
 :smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
