@@ -1,5 +1,5 @@
 # standard
-(updated on 2021. 5. 31.)
+(updated on 2021. 8. 26.)
 
 ## Description
 Gemini GMOS/IFU reduction for standard star data
@@ -7,7 +7,7 @@ Gemini GMOS/IFU reduction for standard star data
 
 ## Workflow
 
-### 1) Initial configurations
+### 0) Initial configurations
 * Now move to the directory with standard star data, and check all the list files (`std*.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode. _**For the detailed explanation for the revision, please refer to those comments in the code.**_
 
 ```
@@ -20,7 +20,7 @@ $ ipython
 (Python 2.7)
 ```
 
-### 2) Verify the MDF
+### 1) Verify the MDF
 * Two Python codes are involved in this step. We have to revise `rev_mdf.py` manually to correct missing fibers. The comments that helps this process are written in the codes because there are a few :unamused: interactive tasks here.
 
 ```
@@ -76,14 +76,14 @@ Extract aperture spectra for erg[FLAT]_1? ('NO')
 --> 'GFEXTRACT exit status: error' message will appear, but it is not a fault.
 ```
 
-### 3) Trace reference (without QE correction)
+### 2) Trace reference (without QE correction)
 * Now the trace reference has to be extracted to define the position of the light on the detector. In the code, we have to check ``pk_line`` is identical throughout the workflow.
 
 ```
 > run g2_trace_ref.py
 ```
 
-### 4) Wavelength solution
+### 3) Wavelength solution
 * This step reduces arc data to produce the wavelength solution. A few interactive tasks are needed here, too.
 
 ```
@@ -107,7 +107,7 @@ Fit dispersion function interactively? (no|yes|NO|YES) ('NO'): Enter
 Output file : erg[ARC].fits, database/aperg[ARC]_[1,2], database/iderg[ARC]_[1,2]
 ```
 
-### 5) Reducing the lamp flat
+### 4) Reducing the lamp flat
 * First, we have to find the gaps between the fiber bundles. Since the IRAF task ``gffindblocks`` is usually not working properly, we find them manually.
 
 ```
@@ -120,7 +120,7 @@ $ jupyter-notebook & (or jupyter-lab &)
 > run g4_proc_flat.py
 ```
 
-### 6) Pre-processing of the science frames & Cosmic ray rejection
+### 5) Pre-processing of the science frames & Cosmic ray rejection
 * 
 
 
