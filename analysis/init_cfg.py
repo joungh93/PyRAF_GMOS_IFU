@@ -11,23 +11,39 @@ import numpy as np
 import glob, os
 
 
-centwave = ['700','680']
-nredux = 'redux4'
+# ----- Directories ----- #
+
+# Basic directories
+cpath = os.path.abspath(".")+"/"
+dir_root = os.path.abspath("../")+"/"    # Same as 'dir_iraf'
+dir_redux = dir_root+"redux/"
+dir_wav = sorted(glob.glob(dir_redux+"w*"))
+
+# Figure directory
+dir_fig = cpath+"diagram/"
+if (glob.glob(dir_fig) == []):
+	os.system("mkdir "+dir_fig)
+
+# Combine directory
+dir_cmb = cpath+"combine/"
+if (glob.glob(dir_cmb) == []):
+	os.system("mkdir "+dir_cmb)
+
+
+# ----- Basic configurations ----- #
+centwave = [l.split("/")[-1][1:-1] for l in dir_wav]
 cube_list, cube_name = [], []
 for i in centwave:
-	dir_redux = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/'+nredux+'_'+i+'/'
-	cube_list += glob.glob(dir_redux+'*_3D.fits')
-
+	cube_list += sorted(glob.glob(dir_redux+"w"+i+"0/*/*_3D.fits"))
 for i in np.arange(len(cube_list)):
 	cube_name.append(cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0])
+cube_spa_off = []    # Cubes with spatial offset
+cube_ref = ''    # Reference cube
 
-cube_list = np.array(cube_list)[np.argsort(cube_name)]
-# cube_list = sorted(cube_list)
 
-dir_iraf = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/'
+# ----- Wavelength setting ----- #
+redshift = 0.342    # Redshift of galaxy
+wav_range = [6520.0, 6600.0]    # H alpha wavelength range (rest-frame)
+check_x = [20, 50]    # [xmin, xmax] for check
+check_y = [15, 45]    # [ymin, ymax] for check
 
-cube_spa_off = ['N20190611S0265', 'N20190612S0125', 'N20190612S0128',
-                'N20190612S0129', 'N20190613S0229', 'N20190613S0230',
-                'N20190613S0233', 'N20190613S0234', 'N20190613S0237']
-
-cube_ref = 'N20190611S0257'
