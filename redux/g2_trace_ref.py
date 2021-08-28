@@ -45,13 +45,26 @@ for d in ic.dir_wav:
         flat = np.loadtxt(ic.lst_flat, dtype=str)
         flat0 = flat.item(0)
 
+        redFlags = {'rawpath':ic.rawdir, 'fl_extract':'yes', 'bias':ic.caldir+ic.procbias,
+                    'fl_over':'yes', 'fl_trim':'yes', 'mdffile':ic.nmdf, 'mdfdir':'./',
+                    'slits':ic.cslit, 'line':ic.pk_line, 'fl_fluxcal':'no', 'fl_gscrrej':'no',
+                    'fl_wavtran':'no', 'fl_skysub':'no', 'fl_inter':'no', 'fl_vardq':'yes'}
+
+        if (j == 0):
+            flatref = current_dir+"/"+dir_sci[j]+"/erg"+flat0
+        else:
+            redFlags['recenter'] = 'no'
+            redFlags['reference'] = flatref
+
         iraf.imdelete('g@'+ic.lst_flat)
         iraf.imdelete('rg@'+ic.lst_flat)
         iraf.imdelete('erg@'+ic.lst_flat)
-        iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='yes', bias=ic.caldir+ic.procbias,
-                      fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
-                      slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
-                      fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='yes')
+        # iraf.gfreduce(flat0, rawpath=ic.rawdir, fl_extract='yes', bias=ic.caldir+ic.procbias,
+        #               fl_over='yes', fl_trim='yes', mdffile=ic.nmdf, mdfdir='./',
+        #               slits=ic.cslit, line=ic.pk_line, fl_fluxcal='no', fl_gscrrej='no',
+        #               fl_wavtran='no', fl_skysub='no', fl_inter='no', fl_vardq='yes',
+        #               recenter='no', reference=reffile)
+        iraf.gfreduce(flat0, **redFlags)
 
         # Coming back to current path
         os.chdir(current_dir)
