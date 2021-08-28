@@ -30,7 +30,7 @@ iraf.unlearn('gfextract')
 # ----- Revising the MDF (copy) ----- #
 
 ###########################
-########## w6500 ##########
+########## w6900 ##########
 ###########################
 d = ic.dir_wav[0]    # Run every time per central wavelength
 dir_sci = sorted(glob.glob(d+"/*"))
@@ -75,7 +75,7 @@ for j in np.arange(len(dir_sci)):
 
             # ----- START ----- #
             g.writelines(apr_info)
-            idx_apr_eff.append(int(apr_info[1].split()[3])-1)                   
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)                  
             # ----- END ----- #     
 
     g.close()
@@ -100,8 +100,22 @@ for j in np.arange(len(dir_sci)):
                 apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
             # ----- START ----- #
-            g.writelines(apr_info)
-            idx_apr_eff.append(int(apr_info[1].split()[3])-1)   
+            if (((apr_num >= 795) & (apr_num <= 1150)) | \
+                ((apr_num >= 1156) & (apr_num <= 1499)) | \
+                (apr_num == 1153)):
+                apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
+                apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
+                apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+1)                       
+                g.writelines(apr_info)
+            elif ((apr_num == 1151) | \
+                  (apr_num == 1154)):
+                apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+2))
+                apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+2-1], mdfdata['YINST'][apr_num+2-1])+mdfdata['BLOCK'][apr_num+2-1]+'\n'
+                apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+2)                       
+                g.writelines(apr_info)            
+            else:
+                g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1) 
             # ----- END ----- #
 
         g.close()
@@ -122,9 +136,14 @@ for j in np.arange(len(dir_sci)):
 
     # Interative tasks for the first science data for each central wavelength
     if (j == 0):
+        dir_db0 = current_dir+"/"+dir_sci[j]+"/"+ic.dir_db
+        apfile0 = apfile
         # Verify the MDF again
         iraf.imdelete('erg@'+ic.lst_flat)
         iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
+    else:
+        for k in np.arange(len(apfile)):
+            os.system('cp -rpv '+dir_db0+apfile0[k]+' '+ic.dir_db)
 
     # Coming back to current path
     os.chdir(current_dir)
@@ -132,7 +151,7 @@ for j in np.arange(len(dir_sci)):
 
 
 ###########################
-########## w6600 ##########
+########## w7000 ##########
 ###########################
 d = ic.dir_wav[1]    # Run every time per central wavelength
 dir_sci = sorted(glob.glob(d+"/*"))
@@ -202,18 +221,8 @@ for j in np.arange(len(dir_sci)):
                 apr_info = copy.deepcopy(dbfile[apr_idx-4:apr_idx-4+23+n_curve])
 
             # ----- START ----- #
-            if (apr_num < 795):
-                apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+1))
-                apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+1-1], mdfdata['YINST'][apr_num+1-1])+mdfdata['BLOCK'][apr_num+1-1]+'\n'
-                apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+1)                       
-                if ((apr_num == 774)):
-                    apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+2))
-                    apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+2-1], mdfdata['YINST'][apr_num+2-1])+mdfdata['BLOCK'][apr_num+2-1]+'\n'
-                    apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+2)
-                g.writelines(apr_info)
-            else:
-                g.writelines(apr_info)
-            idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+            g.writelines(apr_info)
+            idx_apr_eff.append(int(apr_info[1].split()[3])-1)  
             # ----- END ----- #
 
         g.close()
