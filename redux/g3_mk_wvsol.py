@@ -60,10 +60,11 @@ for d in ic.dir_wav:
                       fl_wavtran='no', fl_skysub='no', fl_inter='no')
 
         # Measure the wavelength solution
-        iraf.sleep(2.0)
-        iraf.gswavelength('erg'+arc0, fl_inter='yes',
+        # iraf.sleep(2.0)
+        iraf.gswavelength('erg'+arc0, fl_inter='no',#'yes',
                           # nlost=10, ntarget=15, threshold=25,
                           nlost=20, ntarget=30, threshold=0,
+                          low_reject=2.5, high_reject=2.5,
                           coordlis='gmos$data/GCALcuar.dat')        
 
         # Coming back to current path
