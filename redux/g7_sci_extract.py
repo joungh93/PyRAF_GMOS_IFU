@@ -80,13 +80,13 @@ for d in ic.dir_wav:
 
         if (ic.nslit == 1):
             z1, z2 = z1l, z1u
-            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] -multiframe"
-            ds9_loc = " -scale lock yes -frame lock image"
+            ds9_frm = "ds9 -scalemode zscale eqxbrg"+sci0+".fits[2]"
+            ds9_loc = " -multiframe -scale lock yes -frame lock image"
             ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
         if (ic.nslit == 2):
             z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
-            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] eqxbrg"+sci0+".fits[5] -multiframe"
-            ds9_loc = " -scale lock yes -frame lock image"
+            ds9_frm = "ds9 -scalemode zscale eqxbrg"+sci0+".fits[2] eqxbrg"+sci0+".fits[5]"
+            ds9_loc = " -multiframe -scale lock yes -frame lock image"
             ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
 
         os.system(ds9_frm + ds9_loc + ds9_scl)
