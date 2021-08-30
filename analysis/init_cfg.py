@@ -44,6 +44,6 @@ cube_ref = ''    # Reference cube
 # ----- Wavelength setting ----- #
 redshift = 0.3424    # Redshift of galaxy
 wav_range_res = np.array([6520.0, 6600.0])    # H alpha wavelength range (rest-frame)
-check_x = [15, 55]    # [xmin, xmax] for check
-check_y = [5, 45]    # [ymin, ymax] for check
+check_x = [15, 55]    # [xmin, xmax] for check (including object and some bad regions)
+check_y = [5, 45]    # [ymin, ymax] for check (including object and some bad regions)
 
