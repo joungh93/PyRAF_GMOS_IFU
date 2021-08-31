@@ -13,6 +13,7 @@ import numpy as np
 import glob, os
 import init_cfg as ic
 from astropy.io import fits
+from scipy import ndimage
 
 
 # ----- Loading Ha sum images ----- #
@@ -45,46 +46,22 @@ for i in np.arange(len(ic.cube_list)):
 f.close()
 
 
-# # ----- Shifting & combining Ha sum images ----- #
+# ----- Shifting & combining Ha sum images ----- #
 
-# # Shifting w/ IRAF/imshift task
-# iraf.images()
-# iraf.imgeom()
-# iraf.unlearn('imshift')
+# Running an initial shift task
+offset_X, offset_Y = np.loadtxt('offset.txt').T
+dhs0 = fits.getdata(Ha_list[0], ext=0, header=False)
+dhs2 = np.zeros((len(ic.cube_list), dhs0.shape[0], dhs0.shape[1]))
+for i in np.arange(len(ic.cube_list)):
+	dhs, hdr = fits.getdata(Ha_list[i], ext=0, header=True)
+	dhs_shifted = ndimage.shift(dhs, shift=(-offset_Y[i], -offset_X[i]), mode='nearest')
+	fits.writeto('al1_Ha_sum-'+ic.cube_name[i]+'.fits', dhs_shifted, hdr, overwrite=True)
+	dhs2[i,:,:] = dhs_shifted
 
-# os.system('ls -1 Ha_sum-*.fits > input_Ha_sum.lis')
-# os.system('rm -rfv al1_Ha_sum*.fits')
-# iraf.imshift(input='@input_Ha_sum.lis', output='al1_//@input_Ha_sum.lis', shifts_file='offset.txt',
-#              interp_type='linear', boundary_type='nearest')
-
-# al1_list = sorted(glob.glob('al1_Ha_sum*.fits'))
-
-# f1 = open('al1_comb1.lis', 'w')
-# f2 = open('al1_comb2.lis', 'w')
-# for i in np.arange(len(ic.cube_list)):
-# 	cb = ic.cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0]
-# 	# cb = ic.cube_list[i].split('_3D.fits')[0].split(ic.dir_redux+'cstxeqxbrg')[1]
-# 	if (cb not in ic.cube_spa_off):
-# 		f1.write(al1_list[i]+'\n')
-# 	else:
-# 		f2.write(al1_list[i]+'\n')
-# f1.close()
-# f2.close()
-
-# # Combining w/ IRAF/imcombine task (for reference)
-# outimg = ['al1_Ha_comb1.fits', 'al1_Ha_comb2.fits']
-# for i in np.arange(len(outimg)):
-# 	os.system('rm -rfv '+outimg[i])
-# 	iraf.imcombine(input='@al1_comb{0:1d}.lis'.format(i+1), output=outimg[i], combine='median')
-# 	exec('dat_al1_comb{0:1d} = fits.getdata(outimg[i])'.format(i+1))
-
-# dat_al1_fcomb = 0.5*(dat_al1_comb1+dat_al1_comb2)
-# dat_al1_fcomb[:, 62-1:] = dat_al1_comb1[:,62-1:]
-
-# fits.writeto('al1_fcomb.fits', dat_al1_fcomb, overwrite=True)
-
-
-# os.system('ds9 -scalemode zscale -scale lock yes -frame lock image al1_fcomb.fits &')
+# Combining the shifted images
+cdhs = np.median(dhs2, axis=0)
+fits.writeto('al1_fcomb.fits', cdhs, overwrite=True)
+os.system('ds9 -scalemode zscale -scale lock yes -frame lock image al1_fcomb.fits &')
 
 
 # # ----- Running IRAF/xregister task for the shifted Ha sum images ----- #
@@ -124,12 +101,10 @@ f.close()
 
 # fits.writeto('rgal1_fcomb.fits', dat_rgal1_fcomb, overwrite=True)
 
-
 # os.system('ds9 -scalemode zscale -scale lock yes -frame lock image rgal1_fcomb.fits &')
 
 
 os.chdir(current_dir)
-
 
 
 # Printing the running time
