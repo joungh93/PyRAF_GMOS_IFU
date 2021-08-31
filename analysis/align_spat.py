@@ -70,14 +70,13 @@ for i in np.arange(len(ic.cube_list)):
 		fits.writeto(ic.cube_name[i]+f"_SCI_{j+1:04d}.fits", d_sci_cut[j,:,:], h_sci, overwrite=True)
 		fits.writeto(ic.cube_name[i]+f"_VAR_{j+1:04d}.fits", d_var_cut[j,:,:], h_var, overwrite=True)
 	os.chdir(working_dir)
-print('----- Split images were created. -----')
+print('----- Split images were created. -----\n')
 
 
 # ----- Shifting cubes with offset.txt ----- #
 os.chdir(split_dir)
 offset_X, offset_Y = np.loadtxt(ic.dir_cmb+"offset.txt").T
 for j in trange(d_sci_cut.shape[0]):
-	print(f"Shifting frame {j+1:04d}")
 	for k in np.arange(len(ic.cube_name)):
 		ds, hs = fits.getdata(ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", header=True)
 		ds_shifted = ndimage.shift(ds, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
@@ -88,15 +87,12 @@ for j in trange(d_sci_cut.shape[0]):
 		fits.writeto("al1_"+ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", dv_shifted, hv, overwrite=True)
 
 os.chdir(working_dir)	
-print('----- Shift images were created. -----')
+print('----- Shift images were created. -----\n')
 
 
 # ----- Saving new cubes ([SCI, VAR]) ----- #
 os.system("rm -rfv "+working_dir+"cube1")
 os.system("mkdir "+working_dir+"cube1")
-
-ic.dir_cmb+"al1_fcomb.fits"
-
 
 for i in np.arange(len(ic.cube_list)):
 	hd0 = fits.getheader(ic.cube_list[i], ext=0)
