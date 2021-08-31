@@ -39,6 +39,7 @@ for i in np.arange(len(cube_list)):
 	cube_name.append(cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0])
 cube_spa_off = []    # Cubes with spatial offset
 cube_ref = ''    # Reference cube
+pixel_scale = 0.1    # arcsec/pixel
 
 
 # ----- Wavelength setting ----- #
