@@ -12,29 +12,30 @@ start_time = time.time()
 import numpy as np
 import glob, os
 import init_cfg as ic
-
-
-# ----- Importing IRAF from the root directory ----- #
-current_dir = os.getcwd()
-os.chdir(ic.dir_iraf)
-
-from pyraf import iraf
+from astropy.io import fits
 
 
 # ----- Loading Ha sum images ----- #
-from astropy.io import fits
-
-dir_cmb = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/combine/'
-
-working_dir = dir_cmb
+current_dir = os.getcwd()
+working_dir = ic.dir_cmb
 os.chdir(working_dir)
-iraf.chdir(working_dir)
+Ha_list = sorted(glob.glob("Ha_sum-*.fits"))
 
-# Ha_list = sorted(glob.glob('Ha_sum-*.fits'))
+
+os.chdir(current_dir)
 
 
 # ----- Calculating WCS offsets ----- #
-from astropy.io import fits
+
+# WCS reference
+cb_name0 = Ha_list[0].split("Ha_sum-")[-1].split(".fits")[0]
+cb0 = glob.glob(ic.dir_redux+"w*/*/*"+cb0+"*_3D.fits")[0]
+h01 = fits.getheader(cb0, ext=0)
+
+
+for i in np.arange(len(ic.centwave)):
+	ref_fits = 
+
 
 PA = 85.0*np.pi/180.0
 
