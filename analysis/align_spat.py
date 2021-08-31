@@ -67,64 +67,62 @@ for i in np.arange(len(ic.cube_list)):
 	os.chdir(split_dir)
 	print('Working on '+ic.cube_name[i])
 	for j in trange(np.shape(d_sci_cut)[0]):
-		fits.writeto(ic.cube_name[i]+'_SCI_{0:04d}.fits'.format(j+1), d_sci_cut[j,:,:], h_sci, overwrite=True)
-		fits.writeto(ic.cube_name[i]+'_VAR_{0:04d}.fits'.format(j+1), d_var_cut[j,:,:], h_var, overwrite=True)
+		fits.writeto(ic.cube_name[i]+f"_SCI_{j+1:04d}.fits", d_sci_cut[j,:,:], h_sci, overwrite=True)
+		fits.writeto(ic.cube_name[i]+f"_VAR_{j+1:04d}.fits", d_var_cut[j,:,:], h_var, overwrite=True)
 	os.chdir(working_dir)
+print('----- Split images were created. -----')
 
-'''
 
-# Shifting cubes with offset.txt (IRAF/imshift task)
+# ----- Shifting cubes with offset.txt ----- #
 os.chdir(split_dir)
-iraf.unlearn('imshift')
-for j in np.arange(np.shape(d_sci_cut)[0]):
-	print('Shifting frame {0:04d}'.format(j+1))
-	os.system('rm -rfv al1_N*_2D_{0:04d}.fits'.format(j+1))
-	os.system('ls -1 N*_2D_{0:04d}.fits > split_{1:04d}.lis'.format(j+1, j+1))
-	iraf.sleep(1.0)
-	iraf.imshift(input='@split_{0:04d}.lis'.format(j+1), output='al1_//@split_{0:04d}.lis'.format(j+1),
-		         shifts_file='../offset.txt', interp_type='linear', boundary_type='nearest')
+offset_X, offset_Y = np.loadtxt(ic.dir_cmb+"offset.txt").T
+for j in trange(d_sci_cut.shape[0]):
+	print(f"Shifting frame {j+1:04d}")
+	for k in np.arange(len(ic.cube_name)):
+		ds, hs = fits.getdata(ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", header=True)
+		ds_shifted = ndimage.shift(ds, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
+		fits.writeto("al1_"+ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", ds_shifted, hs, overwrite=True)
 
-	os.system('rm -rfv al1_N*_VAR_{0:04d}.fits'.format(j+1))
-	os.system('ls -1 N*_VAR_{0:04d}.fits > variance_{1:04d}.lis'.format(j+1, j+1))
-	iraf.sleep(1.0)
-	iraf.imshift(input='@variance_{0:04d}.lis'.format(j+1), output='al1_//@variance_{0:04d}.lis'.format(j+1),
-		         shifts_file='../offset.txt', interp_type='linear', boundary_type='nearest')
+		dv, hv = fits.getdata(ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", header=True)
+		dv_shifted = ndimage.shift(dv, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
+		fits.writeto("al1_"+ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", dv_shifted, hv, overwrite=True)
 
-os.chdir(working_dir)
+os.chdir(working_dir)	
+print('----- Shift images were created. -----')
 
 
-# Stop point #2
-sys.exit('Shifted images generated.')
+# ----- Saving new cubes ([SCI, VAR]) ----- #
+os.system("rm -rfv "+working_dir+"cube1")
+os.system("mkdir "+working_dir+"cube1")
+
+ic.dir_cmb+"al1_fcomb.fits"
 
 
-
-# Saving new cubes ([SCI, VAR])
-os.system('rm -rfv '+working_dir+'cube1')
-os.system('mkdir '+working_dir+'cube1')
 for i in np.arange(len(ic.cube_list)):
-	fits_id = ic.cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0]
-
 	hd0 = fits.getheader(ic.cube_list[i], ext=0)
 	d_sci, h_sci = fits.getdata(ic.cube_list[i], ext=1, header=True)
 	d_var, h_var = fits.getdata(ic.cube_list[i], ext=2, header=True)
 
-	wav = np.linspace(start=h_sci['CRVAL3'], stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-1)*h_sci['CD3_3'],
+	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
+                      stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       num=h_sci['NAXIS3'], endpoint=True)
-	wav_start, wav_end = wav_range[0], wav_range[1]
-	nw_cut = int(round((wav_end-wav_start)/h_sci['CD3_3']))
-	spx_start = np.abs(wav-wav_start).argmin()
+
+	spx_start = np.abs(wav-wav_range[0]).argmin()
 	spx_end = spx_start + nw_cut
+
+	d_sci_cut = d_sci[spx_start:spx_end,:,:]
+	d_var_cut = d_var[spx_start:spx_end,:,:]
 
 	al1_d_sci = np.zeros((np.shape(d_sci_cut)[0], np.shape(d_sci_cut)[1], np.shape(d_sci_cut)[2]))
 	al1_d_var = np.zeros((np.shape(d_sci_cut)[0], np.shape(d_sci_cut)[1], np.shape(d_sci_cut)[2]))
 
 	for j in np.arange(np.shape(d_sci_cut)[0]):
-		d_split = fits.getdata(split_dir+'al1_'+fits_id+'_2D_{0:04d}.fits'.format(j+1))
-		al1_d_sci[j,:,:] = d_split
-		d_var2 = fits.getdata(split_dir+'al1_'+fits_id+'_VAR_{0:04d}.fits'.format(j+1))
+		d_sci2 = fits.getdata(split_dir+"al1_"+ic.cube_name[i]+f"_SCI_{j+1:04d}.fits")
+		al1_d_sci[j,:,:] = d_sci2
+		d_var2 = fits.getdata(split_dir+"al1_"+ic.cube_name[i]+f"_VAR_{j+1:04d}.fits")
 		al1_d_var[j,:,:] = d_var2
 
-	os.chdir(working_dir+'cube1')
+	os.chdir(working_dir+"cube1")
 
 	nhd0 = fits.PrimaryHDU()
 	nhd1 = fits.ImageHDU()
@@ -134,22 +132,23 @@ for i in np.arange(len(ic.cube_list)):
 
 	nhd1.data = al1_d_sci
 	nhd1.header = h_sci
+	nhd1.header['CRPIX3'] = 1.
 	nhd1.header['CRVAL3'] = wav[spx_start]
 
 	nhd2.data = al1_d_var
 	nhd2.header = h_var
+	nhd2.header['CRPIX3'] = 1.
 	nhd2.header['CRVAL3'] = wav[spx_start]
 
 	cb_hdu = fits.HDUList([nhd0, nhd1, nhd2])
-	cb_hdu.writeto('al1_'+fits_id+'_3D.fits', overwrite=True)
+	cb_hdu.writeto("al1_"+ic.cube_name[i]+"_3D.fits", overwrite=True)
 
-	print('Written : al1_'+fits_id+'_3D.fits')		
+	print("Written : al1_"+ic.cube_name[i]+"_3D.fits")		
 
 	os.chdir(working_dir)
-'''
 
 os.chdir(current_dir)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
