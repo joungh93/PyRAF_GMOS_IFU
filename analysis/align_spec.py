@@ -14,40 +14,37 @@ import glob, os
 import copy
 import sys
 import init_cfg as ic
-
-
-# ----- Loading the spatially aligned cubes ----- #
 from astropy.io import fits
 from scipy import interpolate
 
-current_dir = os.getcwd()
-dir_cmb = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/combine/'
-dir_cb1 = dir_cmb+'cube1/'
-dir_cb2 = dir_cmb+'cube2/'
 
-working_dir = dir_cmb
+# ----- Loading the spatially aligned cubes ----- #
+current_dir = os.getcwd()
+dir_cb1 = ic.dir_cmb+"cube1/"
+dir_cb2 = ic.dir_cmb+"cube2/"
+
+working_dir = ic.dir_cmb
 os.chdir(working_dir)
 
-os.system('rm -rfv '+dir_cb2)
-os.system('mkdir '+dir_cb2)
+os.system("rm -rfv "+dir_cb2)
+os.system("mkdir "+dir_cb2)
 
 
 # ----- Making spectral combined images ----- #
-wav_start, wav_end, wav_intv = 5010., 9490., 0.5
+wav_start, wav_end = ic.wav_range[0]+10., ic.wav_range[1]-10.
 
 for i in np.arange(len(ic.cube_list)):
-	fits_id = ic.cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0]
+	hd0 = fits.getheader(dir_cb1+"al1_"+ic.cube_name[i]+"_3D.fits", ext=0)
+	d_sci, h_sci = fits.getdata(dir_cb1+"al1_"+ic.cube_name[i]+"_3D.fits", ext=1, header=True)
+	d_var, h_var = fits.getdata(dir_cb1+"al1_"+ic.cube_name[i]+"_3D.fits", ext=2, header=True)
+	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
+                      stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
+                      num=h_sci['NAXIS3'], endpoint=True)
 
-	hd0 = fits.getheader(dir_cb1+'al1_'+fits_id+'_3D.fits', ext=0)
-	d_sci, h_sci = fits.getdata(dir_cb1+'al1_'+fits_id+'_3D.fits', ext=1, header=True)
-	d_var, h_var = fits.getdata(dir_cb1+'al1_'+fits_id+'_3D.fits', ext=2, header=True)
-	wav = np.linspace(start=h_sci['CRVAL3'], stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-1)*h_sci['CD3_3'],
-			          num=h_sci['NAXIS3'], endpoint=True)
-
-	d_scin = np.zeros((1+int((wav_end-wav_start)/wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
-	d_varn = np.zeros((1+int((wav_end-wav_start)/wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
+	d_scin = np.zeros((1+int((wav_end-wav_start)/ic.wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
+	d_varn = np.zeros((1+int((wav_end-wav_start)/ic.wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
 	wav_new = np.linspace(start=wav_start, stop=wav_end,
-                          num=1+int((wav_end-wav_start)/wav_intv), endpoint=True)
+                          num=1+int((wav_end-wav_start)/ic.wav_intv), endpoint=True)
 
 	for x in np.arange(d_sci.shape[2]):
 		for y in np.arange(d_sci.shape[1]):
@@ -67,25 +64,24 @@ for i in np.arange(len(ic.cube_list)):
 	nhd1.data = d_scin
 	nhd1.header = h_sci
 	nhd1.header['CRVAL3'] = wav_start
-	nhd1.header['CD3_3'] = wav_intv
-	nhd1.header['CDELT3'] = wav_intv	
+	nhd1.header['CD3_3'] = ic.wav_intv
+	nhd1.header['CDELT3'] = ic.wav_intv	
 
 	nhd2.data = d_varn
 	nhd2.header = h_var
 	nhd2.header['CRVAL3'] = wav_start
-	nhd2.header['CD3_3'] = wav_intv
-	nhd2.header['CDELT3'] = wav_intv
+	nhd2.header['CD3_3'] = ic.wav_intv
+	nhd2.header['CDELT3'] = ic.wav_intv
 
 	cb_hdu = fits.HDUList([nhd0, nhd1, nhd2])
-	cb_hdu.writeto('al2_'+fits_id+'_3D.fits', overwrite=True)
+	cb_hdu.writeto("al2_"+ic.cube_name[i]+"_3D.fits", overwrite=True)
 
-	print('Written : al2_'+fits_id+'_3D.fits')		
+	print("Written: al2_"+ic.cube_name[i]+"_3D.fits")		
 
 	os.chdir(working_dir)
-
 
 os.chdir(current_dir)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
