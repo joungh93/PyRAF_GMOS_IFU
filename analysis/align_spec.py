@@ -82,6 +82,8 @@ for i in np.arange(len(ic.cube_list)):
 
 os.chdir(current_dir)
 
+print(f"Final wavelength range: {wav_start:.1f} - {wav_end:.1f} AA")
+
 
 # Printing the running time
 print('--- %.4f seconds ---' %(time.time()-start_time))
