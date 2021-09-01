@@ -108,19 +108,21 @@ plt.close()
 
 # ----- Sky line fitting ----- #
 
-# Fitting 1 : 5570-5585AA
-# Fitting 2 : OH 7-2 Q1 (1.5) - 6863.955AA
-# Fitting 3 : 8390-8405AA
-# Fitting 4 : 8875-8895AA
-# Fitting 5 : 8895-8910AA
-# Fitting 6 : 8910-8930AA
+# Fitting 1 : a skyline between 5880-5900AA
+# Fitting 2 : [OI]6300
+# Fitting 3 : OH 7-2 Q1 (1.5) - 6863.955AA
+# Fitting 4 : a skyline between 8390-8405AA
+# Fitting 5 : a skyline between 8875-8895AA
+# Fitting 6 : a skyline between 8910-8930AA
 
-wav_fit = [[5570., 5585.],  # a skyline between 5570-5585AA
+wav_fit = [[5880., 5900.],  # a skyline between 5880-5900AA
+           [6292., 6310.],  # [OI]6300
            [6855., 6870.],  # OH 7-2 Q1 (1.5) - 6863.955AA
            [8390., 8405.],  # a skyline between 8390-8405AA
            [8880., 8895.],  # a skyline between 8875-8895AA
            [8910., 8930.]]  # a skyline between 8910-8930AA
-wav_cont = [[5560., 5565., 5590., 5595.],
+wav_cont = [[5820., 5875., 5905., 5915.],
+            [6270., 6280., 6310., 6320.],
             [6850., 6855., 6872.5, 6877.5],
             [8389., 8391., 8407.5, 8408.5],
             [8875., 8878., 8894., 8896.],
@@ -277,6 +279,9 @@ myoutput.pprint()
 p = np.array([myoutput.beta[0], myoutput.beta[1]])
 pe = np.array([myoutput.sd_beta[0], myoutput.sd_beta[1]])
 
+# Saving the results
+np.savetxt('relation_wav_R.txt', np.column_stack([p, pe]), fmt='%.4f  %.4f')
+
 ycal = temfunc(p, xfit)
 
 ax1.plot(np.linspace(4500, 10000, num=11001, endpoint=True),
@@ -304,7 +309,8 @@ ewav = [(3727.092+3729.875)/2, 4862.680, 4960.295, 5008.240,
 
 print('\n')
 
-colname = ['elines', 'ewav', 'R', 'e_R', 'vd_inst', 'e_vd_inst']
+colname = ['elines', 'ewav', 'R', 'e_R',
+           'ld_inst', 'e_ld_inst', 'vd_inst', 'e_vd_inst']
 df_resol = pd.DataFrame(columns=colname)
 
 for i in np.arange(len(elines)):
@@ -312,10 +318,12 @@ for i in np.arange(len(elines)):
     eR = temfunc(p, ewav[i]*(1.0+ic.redshift))
     e_eR = np.sqrt(pe[0]**2.0 + (ewav[i]*(1.0+ic.redshift)*pe[1])**2.0)
     print('R : {0:.1f} +/- {1:.1f}'.format(eR, e_eR))
+
+    ld_inst = ewav[i] / (2.0*np.sqrt(2.0*np.log(2.0))*eR)
+    e_ld_inst = ewav[i]*e_eR / (2.0*np.sqrt(2.0*np.log(2.0))*eR*eR)
     vd_inst = c / (2.0*np.sqrt(2.0*np.log(2.0))*eR)
     e_vd_inst = c*e_eR / (2.0*np.sqrt(2.0*np.log(2.0))*eR*eR)
-    # ld_inst = ewav[i]*(1.0+ic.redshift) / (2.0*np.sqrt(2.0*np.log(2.0))*eR)
-    # vd_inst = c*ld_inst/(ewav[i]*(1.0+ic.redshift))
+
     print('vd_inst : {0:.2f} +/- {1:.2f} km/s'.format(vd_inst, e_vd_inst))
     print('\n')
 
@@ -323,8 +331,10 @@ for i in np.arange(len(elines)):
                            colname[1] : ewav[i],
                            colname[2] : eR,
                            colname[3] : e_eR,
-                           colname[4] : vd_inst,
-                           colname[5] : e_vd_inst})
+                           colname[4] : ld_inst,
+                           colname[5] : e_ld_inst,
+                           colname[6] : vd_inst,
+                           colname[7] : e_vd_inst})
     df_resol = df_resol.append(df, ignore_index=True)
 
 df_resol.to_pickle('df_resol.pkl')
@@ -332,4 +342,3 @@ df_resol.to_pickle('df_resol.pkl')
 
 # Printing the running time
 print('--- %s seconds ---' %(time.time()-start_time))
-
