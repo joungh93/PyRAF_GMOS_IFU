@@ -30,23 +30,6 @@ os.system('mkdir '+split_dir)
 
 # ----- Making the split 2D images for spatial alignment ----- #
 
-# Reading wavelength range
-wav_0, wav_1, dwav = [], [], []
-for i in np.arange(len(ic.cube_list)):
-	h_sci = fits.getheader(ic.cube_list[i], ext=1)
-	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
-                      stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
-                      num=h_sci['NAXIS3'], endpoint=True)
-	wav_0.append(wav[10])
-	wav_1.append(wav[-11])
-	dwav.append(h_sci['CD3_3'])
-wav_0, wav_1, dwav = np.array(wav_0), np.array(wav_1), np.array(dwav)
-
-# Total wavelength range
-wav_range = [10 * (1 + wav_0.max() // 10),
-             10 * (wav_1.min() // 10)]
-nw_cut = int(round((wav_range[1]-wav_range[0])/np.mean(dwav))) + 1 
-
 # Making the split images
 for i in np.arange(len(ic.cube_list)):
 	hd0 = fits.getheader(ic.cube_list[i], ext=0)
@@ -58,8 +41,8 @@ for i in np.arange(len(ic.cube_list)):
                       num=h_sci['NAXIS3'], endpoint=True)
 
 	# Wavelength cut
-	spx_start = np.abs(wav-wav_range[0]).argmin()
-	spx_end = spx_start + nw_cut
+	spx_start = np.abs(wav-ic.wav_range[0]).argmin()
+	spx_end = spx_start + ic.nw_cut
 
 	d_sci_cut = d_sci[spx_start:spx_end,:,:]
 	d_var_cut = d_var[spx_start:spx_end,:,:]
@@ -103,8 +86,8 @@ for i in np.arange(len(ic.cube_list)):
                       stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       num=h_sci['NAXIS3'], endpoint=True)
 
-	spx_start = np.abs(wav-wav_range[0]).argmin()
-	spx_end = spx_start + nw_cut
+	spx_start = np.abs(wav-ic.wav_range[0]).argmin()
+	spx_end = spx_start + ic.nw_cut
 
 	d_sci_cut = d_sci[spx_start:spx_end,:,:]
 	d_var_cut = d_var[spx_start:spx_end,:,:]
@@ -139,7 +122,7 @@ for i in np.arange(len(ic.cube_list)):
 	cb_hdu = fits.HDUList([nhd0, nhd1, nhd2])
 	cb_hdu.writeto("al1_"+ic.cube_name[i]+"_3D.fits", overwrite=True)
 
-	print("Written : al1_"+ic.cube_name[i]+"_3D.fits")		
+	print("Written: al1_"+ic.cube_name[i]+"_3D.fits")		
 
 	os.chdir(working_dir)
 
