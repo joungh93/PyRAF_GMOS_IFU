@@ -21,13 +21,15 @@ dir_fig = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/diagram/'
 
 
 # ----- Reading the final cube ----- #
-fin_cb = 'fcube_3D.fits'
+dir_fig = ic.cpath+"diagram/"
+fin_cb = "bfcube_3D.fits"
 hd0 = fits.getheader(fin_cb, ext=0)
 d_sci, h_sci = fits.getdata(fin_cb, ext=1, header=True)
 d_var, h_var = fits.getdata(fin_cb, ext=2, header=True)
 wav = np.linspace(start=h_sci['CRVAL3'],
                   stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-1)*h_sci['CD3_3'],
                   num=h_sci['NAXIS3'], endpoint=True)
+
 
 # ----- Making the collapsed images ----- #
 # d_sci[d_sci < 0.0] = 0.0
