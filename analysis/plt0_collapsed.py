@@ -17,22 +17,18 @@ from astropy.io import fits
 import init_cfg as ic
 
 
-dir_fig = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/diagram/'
-
-
 # ----- Reading the final cube ----- #
 dir_fig = ic.cpath+"diagram/"
 fin_cb = "bfcube_3D.fits"
 hd0 = fits.getheader(fin_cb, ext=0)
 d_sci, h_sci = fits.getdata(fin_cb, ext=1, header=True)
 d_var, h_var = fits.getdata(fin_cb, ext=2, header=True)
-wav = np.linspace(start=h_sci['CRVAL3'],
-                  stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-1)*h_sci['CD3_3'],
+wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
+                  stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                   num=h_sci['NAXIS3'], endpoint=True)
 
 
 # ----- Making the collapsed images ----- #
-# d_sci[d_sci < 0.0] = 0.0
 
 ### Figure 1 : white images
 fig1 = plt.figure(1, figsize=(10.2, 7.35))
@@ -47,24 +43,24 @@ v_low, v_high = np.percentile(d_white, [5.0, 95.0])
 
 ax1.imshow(d_white, cmap='gray', vmin=v_low, vmax=v_high, origin='lower')
 
-plt.savefig(dir_fig+'continuum.pdf')
+plt.savefig(dir_fig+'continuum.pdf', dpi=300)
+plt.savefig(dir_fig+'continuum.png', dpi=300)
 plt.close()
+
+fits.writeto(dir_fig+'continuum.fits', d_white, overwrite=True)
 
 
 # ----- Making the wavelength cutout images ----- #
 
 # Wavelength cutout ranges
-wav_range = [[5035, 5055],  # [OII]3727,3729
-             [5865, 5885],  # H gamma
-             [6570, 6590],  # H beta
-             [6700, 6720],  # [OIII]4959
-             [6765, 6785],  # [OIII]5007
-             [8520, 8535],  # [OI]6300
-             [8870, 8895],  # H alpha
-             [8900, 8917],  # [NII]6584
-             [9080, 9120]]  # [SII]6717,6731
-emissions = ['OII3727+29', 'Hgamma','Hbeta','OIII4959','OIII5007',
-             'OI6300','Halpha','NII6584','SII6717+31']
+wav_range = [[4990, 5015],  # [OII]3727,3729
+             [6500, 6550],  # H beta
+             [6640, 6670],  # [OIII]4959
+             [6700, 6740],  # [OIII]5007
+             [8730, 8860],  # H alpha + [NII]6548/84
+             [9010, 9055]]  # [SII]6717,6731
+emissions = ['OII3727+29','Hbeta','OIII4959','OIII5007',
+             'Halpha+NII','SII6717+31']
 
 d_col = np.zeros((np.shape(d_sci)[1], np.shape(d_sci)[2]))
 
@@ -87,8 +83,11 @@ for j in np.arange(len(emissions)):
 
 	ax1.imshow(d_lines, cmap='gray', vmin=v_low, vmax=v_high, origin='lower')
 
-	plt.savefig(dir_fig+'wavcut_'+emissions[j]+'.pdf')
+	plt.savefig(dir_fig+'wavcut_'+emissions[j]+'.pdf', dpi=300)
+	plt.savefig(dir_fig+'wavcut_'+emissions[j]+'.png', dpi=300)
 	plt.close()
+
+	fits.writeto(dir_fig+'wavcut_'+emissions[j]+'.fits', d_lines, overwrite=True)
 
 	d_col += d_lines
 
@@ -105,8 +104,11 @@ v_low, v_high = np.percentile(d_col, [5.0, 95.0])
 
 ax1.imshow(d_col, cmap='gray', vmin=v_low, vmax=v_high, origin='lower')
 
-plt.savefig(dir_fig+'emissions.pdf')
+plt.savefig(dir_fig+'emissions.pdf', dpi=300)
+plt.savefig(dir_fig+'emissions.png', dpi=300)
 plt.close()
+
+fits.writeto(dir_fig+'emissions.fits', d_col, overwrite=True)
 
 
 # Printing the running time
