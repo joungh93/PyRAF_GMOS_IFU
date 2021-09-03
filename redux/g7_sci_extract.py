@@ -35,6 +35,10 @@ iraf.unlearn('gfdisplay')
 for d in ic.dir_wav:
     dir_sci = sorted(glob.glob(d+"/*"))
 
+    filenames1 = ""
+    if (ic.nslit == 2):
+        filenames2 = ""
+
     for j in np.arange(len(dir_sci)):
 
         # Moving each science directory
@@ -71,29 +75,39 @@ for d in ic.dir_wav:
         # ---> making a directory for bad column masking region files
         # ("badcol/sci{}_slit{}.reg", with DS9 saoimage format)
 
-        dt1, hd1 = fits.getdata('eqxbrg'+sci0+'.fits', ext=2, header=True)
-        z1l, z1u = np.percentile(dt1, [15, 85])
-        # 2-slit mode
+        filenames1 += (dir_sci[j]+"eqxbrg"+sci0+".fits[2] ")
         if (ic.nslit == 2):
-            dt2, hd2 = fits.getdata('eqxbrg'+sci0+'.fits', ext=5, header=True)
-            z2l, z2u = np.percentile(dt2, [15, 85])
+            filenames2 += (dir_sci[j]+"eqxbrg"+sci0+".fits[5] ")
 
-        if (ic.nslit == 1):
-            z1, z2 = z1l, z1u
-            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] -multiframe"
-            ds9_loc = " -scale lock yes -frame lock image"
-            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
-        if (ic.nslit == 2):
-            z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
-            ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] eqxbrg"+sci0+".fits[5] -multiframe"
-            ds9_loc = " -scale lock yes -frame lock image"
-            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+        # #####
+        # dt1, hd1 = fits.getdata('eqxbrg'+sci0+'.fits', ext=2, header=True)
+        # z1l, z1u = np.percentile(dt1, [15, 85])
+        # # 2-slit mode
+        # if (ic.nslit == 2):
+        #     dt2, hd2 = fits.getdata('eqxbrg'+sci0+'.fits', ext=5, header=True)
+        #     z2l, z2u = np.percentile(dt2, [15, 85])
 
-        os.system(ds9_frm + ds9_loc + ds9_scl)
+        # if (ic.nslit == 1):
+        #     z1, z2 = z1l, z1u
+        #     ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] -multiframe"
+        #     ds9_loc = " -scale lock yes -frame lock image"
+        #     ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+        # if (ic.nslit == 2):
+        #     z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
+        #     ds9_frm = "ds9 eqxbrg"+sci0+".fits[2] eqxbrg"+sci0+".fits[5] -multiframe"
+        #     ds9_loc = " -scale lock yes -frame lock image"
+        #     ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+
+        # os.system(ds9_frm + ds9_loc + ds9_scl)
+        # #####
 
         # Coming back to current path
         os.chdir(current_dir)
-        iraf.chdir(current_dir) 
+        iraf.chdir(current_dir)
+
+    os.system("ds9 -multiframe -scalemode zscale "+filenames1+"&")
+    if (ic.nslit == 2):
+        os.system("ds9 -multiframe -scalemode zscale "+filenames2+"&")
 
 
 # Printing the running time
