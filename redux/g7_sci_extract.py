@@ -75,9 +75,9 @@ for d in ic.dir_wav:
         # ---> making a directory for bad column masking region files
         # ("badcol/sci{}_slit{}.reg", with DS9 saoimage format)
 
-        filenames1 += (dir_sci[j]+"eqxbrg"+sci0+".fits[2] ")
+        filenames1 += (dir_sci[j]+"/eqxbrg"+sci0+".fits[2] ")
         if (ic.nslit == 2):
-            filenames2 += (dir_sci[j]+"eqxbrg"+sci0+".fits[5] ")
+            filenames2 += (dir_sci[j]+"/eqxbrg"+sci0+".fits[5] ")
 
         # #####
         # dt1, hd1 = fits.getdata('eqxbrg'+sci0+'.fits', ext=2, header=True)
@@ -105,9 +105,10 @@ for d in ic.dir_wav:
         os.chdir(current_dir)
         iraf.chdir(current_dir)
 
-    os.system("ds9 -multiframe -scalemode zscale "+filenames1+"&")
+    ds9_opt = "-scalemode zscale -scale lock yes -frame lock image"
+    os.system("ds9 "+ds9_opt+" "+filenames1+"&")
     if (ic.nslit == 2):
-        os.system("ds9 -multiframe -scalemode zscale "+filenames2+"&")
+        os.system("ds9 "+ds9_opt+" "+filenames2+"&")
 
 
 # Printing the running time
