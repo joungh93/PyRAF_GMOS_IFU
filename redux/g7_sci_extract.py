@@ -105,7 +105,7 @@ for d in ic.dir_wav:
         os.chdir(current_dir)
         iraf.chdir(current_dir)
 
-    ds9_opt = "-scalemode zscale -scale lock yes -frame lock image"
+    ds9_opt = "-scalemode zscale -scale lock yes -frame lock image -mode region -regions shape box"
     os.system("ds9 "+ds9_opt+" "+filenames1+"&")
     if (ic.nslit == 2):
         os.system("ds9 "+ds9_opt+" "+filenames2+"&")
