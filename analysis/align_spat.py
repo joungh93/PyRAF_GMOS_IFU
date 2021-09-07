@@ -77,11 +77,18 @@ print('----- Shift images were created. -----\n')
 os.system("rm -rfv "+working_dir+"cube1")
 os.system("mkdir "+working_dir+"cube1")
 
+p = np.genfromtxt(current_dir+"/count_max.txt", dtype=None, encoding=None, 
+	              names=("cb","val"))
+
 for i in np.arange(len(ic.cube_list)):
 	hd0 = fits.getheader(ic.cube_list[i], ext=0)
 	d_sci, h_sci = fits.getdata(ic.cube_list[i], ext=1, header=True)
 	d_var, h_var = fits.getdata(ic.cube_list[i], ext=2, header=True)
 
+	assert (p['cb'][i] == ic.cube_name[i])
+	count_max = p['val'][i]
+	d_sci[d_sci > count_max] = 0.0
+	
 	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       num=h_sci['NAXIS3'], endpoint=True)
