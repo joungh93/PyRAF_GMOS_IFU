@@ -52,11 +52,12 @@ for d in ic.dir_wav:
                     fl_atmdisp='yes', fl_var='yes', fl_dq='yes')
 
         fits.open('cstxeqxbrg'+sci0+'_3D.fits').info()
-        os.system('ds9 -scalemode zscale cstxeqxbrg'+sci0+'_3D.fits[sci] &')
 
         # Coming back to current path
         os.chdir(current_dir)
         iraf.chdir(current_dir)  
+
+os.system('ds9 -scalemode zscale w*/*/cstxeqxbrg*_3D.fits &')
 
 
 # Printing the running time
