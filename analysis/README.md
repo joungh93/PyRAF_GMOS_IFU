@@ -1,5 +1,5 @@
 # Analysis
-(updated on 2021. 9. 1.)
+(updated on 2021. 9. 7.)
 
 ## Description
 * Combining the reduced Gemini GMOS/IFU cubes
@@ -39,7 +39,7 @@ $ jupyter-notebook blank_init.ipynb &
 ```
 * To define the boundary between galaxy disks and tails, IRAF/ellipse task should be used here under Python 2 environment.
 ```
-$ jupyter-notebook def_boundary.ipynb &
+$ jupyter-notebook def_boundary2.ipynb &
 ```
 
 #### 2-4. Voronoi binning
