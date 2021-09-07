@@ -111,14 +111,16 @@ for i in np.arange(nvbin):
 bin_order = sn.argsort()[::-1]
 
 
-# Wavelength masking range (rest-frame)
+# Wavelength masking range
 wav_frame_mode = 'obs'    # 'obs' / 'res'
 wav_msk2 = np.array([[4990, 5015],  # [OII]
                     [5170, 5200],   # [NeIII]
-                    [5450, 5550],   # H delta
+                    [5430, 5560],   # H delta
                     [5750, 5875],   # H gamma
-                    [6500, 6575],   # H beta
-                    [6640, 6750],   # [OIII]4959/5007
+                    [6000, 6320],   # noisy? region
+                    [6450, 6580],   # H beta
+                    [6630, 6780],    # [OIII]4959/5007
+                    [6900, 7300],   # noisy? region
                     [8700, 8900],   # [NII] + H alpha
                     [9000, 9075]    # [SII]
                     ])
