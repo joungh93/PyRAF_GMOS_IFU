@@ -112,4 +112,4 @@ fits.writeto(dir_fig+'emissions.fits', d_col, overwrite=True)
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
