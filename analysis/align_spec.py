@@ -32,6 +32,8 @@ os.system("mkdir "+dir_cb2)
 
 # ----- Making spectral combined images ----- #
 wav_start, wav_end = ic.wav_range[0]+10., ic.wav_range[1]-10.
+p = np.genfromtxt(current_dir+"/count_max.txt", dtype=None, encoding=None, 
+	              names=("cb","val"))
 
 for i in np.arange(len(ic.cube_list)):
 	hd0 = fits.getheader(dir_cb1+"al1_"+ic.cube_name[i]+"_3D.fits", ext=0)
@@ -40,6 +42,10 @@ for i in np.arange(len(ic.cube_list)):
 	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       num=h_sci['NAXIS3'], endpoint=True)
+
+	assert (p['cb'][i] == ic.cube_name[i])
+	count_max = p['val'][i]
+	d_sci[d_sci > count_max] = 0.0
 
 	d_scin = np.zeros((1+int((wav_end-wav_start)/ic.wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
 	d_varn = np.zeros((1+int((wav_end-wav_start)/ic.wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
