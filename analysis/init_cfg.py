@@ -66,3 +66,5 @@ wav_range = [10 * (1 + wav_0.max() // 10),
              10 * (wav_1.min() // 10)]
 nw_cut = int(round((wav_range[1]-wav_range[0])/np.mean(dwav))) + 1 
 wav_intv = 1.0    # the resulting wavelength interval
+
+combine_mode = 'median'    # 'median' / 'clippedmean'
