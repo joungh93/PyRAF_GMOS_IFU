@@ -26,6 +26,8 @@ os.chdir(working_dir)
 
 # ----- Combining the spatially & spectrally aligned cubes ----- #
 al2_cubes = sorted(glob.glob("al2_*_3D.fits"))
+# p = np.genfromtxt(current_dir+"/count_max.txt", dtype=None, encoding=None, 
+# 	              names=("cb","val"))
 d_sci, h_sci = fits.getdata(al2_cubes[0], ext=1, header=True)
 f_sci = np.zeros((d_sci.shape[0], d_sci.shape[1], d_sci.shape[2]))
 f_var = np.zeros((d_sci.shape[0], d_sci.shape[1], d_sci.shape[2]))
@@ -38,9 +40,14 @@ for k in tqdm.trange(d_sci.shape[0]):
 		hd0 = fits.getheader(al2_cubes[i], ext=0)
 		d_sci, h_sci = fits.getdata(al2_cubes[i], ext=1, header=True)
 		d_var, h_var = fits.getdata(al2_cubes[i], ext=2, header=True)
+		
+		# idx_cube = (p['cb'] == ic.cube_name[i])
+		# count_max = p['val'][idx_cube]
+		# d_sci[d_sci > count_max] = 0.0
+
 		ds[i,:,:] = d_sci[k,:,:]
 		dv[i,:,:] = d_var[k,:,:]
-
+		
 	if (ic.combine_mode == 'median'):
 		cds = np.nanmedian(ds, axis=0)
 	if (ic.combine_mode == 'clippedmean'):
