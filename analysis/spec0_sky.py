@@ -341,4 +341,4 @@ df_resol.to_pickle('df_resol.pkl')
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
