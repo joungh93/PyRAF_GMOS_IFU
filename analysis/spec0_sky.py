@@ -107,26 +107,26 @@ plt.close()
 
 
 # ----- Sky line fitting ----- #
-
-# Fitting 1 : a skyline between 5880-5900AA
-# Fitting 2 : [OI]6300
-# Fitting 3 : OH 7-2 Q1 (1.5) - 6863.955AA
-# Fitting 4 : a skyline between 8390-8405AA
-# Fitting 5 : a skyline between 8875-8895AA
-# Fitting 6 : a skyline between 8910-8930AA
-
-wav_fit = [[5880., 5900.],  # a skyline between 5880-5900AA
+wav_fit = [[5565., 5585.],  # a skyline between 5565-5585AA
            [6292., 6310.],  # [OI]6300
-           [6855., 6870.],  # OH 7-2 Q1 (1.5) - 6863.955AA
+           [6350., 6370.],  # a skyline between 6350-6370AA
+           # [6855., 6870.],  # OH 7-2 Q1 (1.5) - 6863.955AA
+           # [7510., 7535.],  # a skyline between 7510-7535AA
+           # [7700., 7730.],  # a skyline between 7700-7730AA
            [8390., 8405.],  # a skyline between 8390-8405AA
-           [8880., 8895.],  # a skyline between 8875-8895AA
-           [8910., 8930.]]  # a skyline between 8910-8930AA
-wav_cont = [[5820., 5875., 5905., 5915.],
+           [8875., 8895.],  # a skyline between 8875-8895AA
+           [8910., 8930.],  # a skyline between 8910-8930AA
+           [9412., 9425.]]   # a skyline between 9412-9425AA
+wav_cont = [[5550., 5560., 5590., 5600.],
             [6270., 6280., 6310., 6320.],
-            [6850., 6855., 6872.5, 6877.5],
-            [8389., 8391., 8407.5, 8408.5],
-            [8875., 8878., 8894., 8896.],
-            [8910., 8912., 8930., 8935.]]
+            [6335., 6345., 6370., 6380.],
+            # [6850., 6855., 6872.5, 6877.5],
+            # [7500., 7510., 7536., 7546.],
+            # [7690., 7700., 7735., 7739.],
+            [8387., 8389., 8404., 8407.],
+            [8872., 8876., 8891., 8894.],
+            [8909., 8911., 8928., 8931.],
+            [9406., 9411., 9425., 9429.]]
 
 colname = ['wave0','e_wave0','lsigma','e_lsigma','vsigma','e_vsigma','flxcount','e_flxcount',
            'R','e_R','RMS','reduced_chi2']
@@ -341,4 +341,4 @@ df_resol.to_pickle('df_resol.pkl')
 
 
 # Printing the running time
-print('--- %.4f seconds ---' %(time.time()-start_time))
+print('--- %s seconds ---' %(time.time()-start_time))
