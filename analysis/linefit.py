@@ -76,47 +76,74 @@ class linefit:
         self.c = 2.99792e+5  # km/s
         warnings.filterwarnings("ignore", category=RuntimeWarning) 
 
+
+        # Reading the results of the integrated spectra
+        fit_itg = np.genfromtxt('linefit_integrated.txt', dtype=None, encoding='ascii', comments='#',
+                                names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
+                                       'R','e_R','flux','e_flux','rchisq'))
+        self.fit_itg = fit_itg
+
+        if broad_component:
+            self.data_vbin = data_vbin
+            self.data_gaussian = data_gaussian
+            fit_itgb = np.genfromtxt('linefit_integrated_broad.txt', dtype=None, encoding='ascii', comments='#',
+                                     names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
+                                            'R','e_R','flux','e_flux','rchisq','flxsum_scale'))
+            self.fit_itgb = fit_itgb
+
         # Line declarations
         self.line_num = line_numbers
 
         if (line_numbers == 0):
-            self.nlines = 1
-            self.line_names = ['OII3727']
-            self.line_wav = [3727.092]
-            self.wav_fit = [3720.0, 3740.0]
+            lname = ['OII3727']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
+            self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         if (line_numbers == 1):
-            self.nlines = 1
-            self.line_names = ['Hbeta']
-            self.line_wav = [4862.68]
-            self.wav_fit = [4855.0, 4870.0]
+            lname = ['Hbeta']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
+            if broad_component:
+                self.wav_fit = [self.line_wav[0]-50.0, self.line_wav[-1]+50.0]
+            else:
+                self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         if (line_numbers == 2):
-            self.nlines = 2
-            self.line_names = ['OIII4959', 'OIII5007']
-            self.line_wav = [4960.295, 5008.240]
-            self.wav_fit = [4950.0, 5015.0]
+            lname = ['OIII4959', 'OIII5007']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
+            if broad_component:
+                self.wav_fit = [self.line_wav[0]-20.0, self.line_wav[-1]+30.0]
+            else:
+                self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         if (line_numbers == 3):
-            self.nlines = 3
-            self.line_names = ['NII6548', 'Halpha', 'NII6584']
-            self.line_wav = [6549.86, 6564.61, 6585.27]
+            lname = ['NII6548', 'Halpha', 'NII6584']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
             if broad_component:
-                self.wav_fit = [6500.0, 6625.0]
+                self.wav_fit = [self.line_wav[0]-50.0, self.line_wav[-1]+40.0]
             else:
-                self.wav_fit = [6540.0, 6595.0]
+                self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         if (line_numbers == 4):
-            self.nlines = 2
-            self.line_names = ['SII6717', 'SII6731']
-            self.line_wav = [6718.29, 6732.67]
-            self.wav_fit = [6710.0, 6740.0]
+            lname = ['SII6717', 'SII6731']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
+            self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         if (line_numbers == 5):
-            self.nlines = 1
-            self.line_names = ['OI6300']
-            self.line_wav = [6302.046]
-            self.wav_fit = [6295.0, 6310.0]
+            lname = ['OI6300']
+            self.nlines = len(lname)
+            self.line_names = lname
+            self.line_wav = [fit_itg['mu'][fit_itg['line'] == l].item(0) for l in lname]
+            self.wav_fit = [self.line_wav[0]-10.0, self.line_wav[-1]+10.0]
 
         # Data
         self.wav_obs = wavelength
@@ -151,20 +178,6 @@ class linefit:
             self.lsig_ulim = 5.0*self.lsig0
         else:
             self.lsig_ulim = 2.0*self.lsig0
-
-        # Reading the results of the integrated spectra
-        fit_itg = np.genfromtxt('linefit_integrated.txt', dtype=None, encoding='ascii', comments='#',
-                                names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
-                                       'R','e_R','flux','e_flux','rchisq'))
-        self.fit_itg = fit_itg
-
-        if broad_component:
-            self.data_vbin = data_vbin
-            self.data_gaussian = data_gaussian
-            fit_itgb = np.genfromtxt('linefit_integrated_broad.txt', dtype=None, encoding='ascii', comments='#',
-                                     names=('line','mu','e_mu','lsig','e_lsig','vsig','e_vsig',
-                                            'R','e_R','flux','e_flux','rchisq','flxsum_scale'))
-            self.fit_itgb = fit_itgb
 
 
     def model_func(self, theta, x):
@@ -481,40 +494,58 @@ if (__name__ == '__main__'):
     from astropy.io import fits
 
     # ----- Basic parameters ----- #
-    redshift = 0.3033
+    redshift = 0.3527
     dir_vbin = 'vorbin/'
-    dir_lines = 'lines2/'
-    # os.system('rm -rfv '+dir_lines+'*')
-    # os.system('mkdir '+dir_lines+'check/')
+    dir_lines = 'lines3/'
+    if (glob.glob(dir_lines) == []):
+        os.system("mkdir "+dir_lines)
+        if (glob.glob(dir_lines+"check/") == []):
+            os.system("mkdir "+dir_lines+"check/")
+
 
     # ----- Loading Voronoi binned data ----- #
     vb = np.load(dir_vbin+'vorbin_array.npz')
     # wav, sci, var
     data_vbin = fits.getdata(dir_vbin+'vbin.fits').astype('int')
     nvbin = np.unique(data_vbin).size-1
-    # img_g2d = fits.getdata('g2d.fits')
-    img_g2d = fits.getdata('gfac.fits')
 
-    # l1 = linefit(vb['wav'], vb['sci'], vb['var'], 1, redshift)
-    # l2 = linefit(vb['wav'], vb['sci'], vb['var'], 2, redshift)
-    l3 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 3, redshift, dir_lines,
-                 broad_component=True, data_vbin=data_vbin, data_gaussian=img_g2d)
-    # l4 = linefit(vb['wav'], vb['sci'], vb['var'], 4, redshift, broad_component=True)
+    l1 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 1, redshift, dir_lines)
+    l2 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 2, redshift, dir_lines)
+    l3 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 3, redshift, dir_lines)
+    l4 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 4, redshift, dir_lines)
 
-    ibin = 313
+    test_ibin = [0]
 
-    df3 = l3.solve(ibin, check=True, nwalkers=50, ndiscard=1000, nsample=1000,
-                   fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4, broad_component=True)
+    for ibin in test_ibin:
 
-    theta3 = df3.values[0, 5]
-    for ln in np.arange(l3.nlines):
-        theta3 = np.append(theta3, df3.values[ln, 1:10:8])
-    print(l3.log_prior(theta3, ibin))
-    print()
+        df1 = l1.solve(ibin, check=True, nwalkers=50,
+                       ndiscard=1000, nsample=1000,
+                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
+        theta1 = df1.values[0, 5]
+        for ln in np.arange(l1.nlines):
+            theta1 = np.append(theta1, df1.values[ln, 1:10:8])
+        print(l1.log_prior(theta1, ibin))
 
-    # df4 = l4.solve(ibin, check=True, nwalkers=32,
-    #              ndiscard=3000, nsample=1000, fluct=1.0e-4)
-    # theta4 = df4.values[0, 5]
-    # for ln in np.arange(l4.nlines):
-    #   theta4 = np.append(theta4, df4.values[ln, 1:10:8])
-    # print(l4.log_prior(theta4, ibin))
+        df2 = l2.solve(ibin, check=True, nwalkers=50,
+                       ndiscard=1000, nsample=1000,
+                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
+        theta2 = df2.values[0, 5]
+        for ln in np.arange(l2.nlines):
+            theta2 = np.append(theta2, df2.values[ln, 1:10:8])
+        print(l2.log_prior(theta2, ibin))
+
+        df3 = l3.solve(ibin, check=True, nwalkers=50,
+                       ndiscard=1000, nsample=1000,
+                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
+        theta3 = df3.values[0, 5]
+        for ln in np.arange(l3.nlines):
+            theta3 = np.append(theta3, df3.values[ln, 1:10:8])
+        print(l3.log_prior(theta3, ibin))
+
+        df4 = l4.solve(ibin, check=True, nwalkers=50,
+                       ndiscard=1000, nsample=1000,
+                       fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
+        theta4 = df4.values[0, 5]
+        for ln in np.arange(l4.nlines):
+            theta4 = np.append(theta4, df4.values[ln, 1:10:8])
+        print(l4.log_prior(theta4, ibin))
