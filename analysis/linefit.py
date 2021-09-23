@@ -166,18 +166,27 @@ class linefit:
         self.par = par
         self.e_par = e_par
 
-        # Lambda sigma range
+        # Velocity sigma range
         Rmax = self.par[0] + self.par[1]*self.wav_obs[self.spx_fit[1]]
         e_Rmax = np.sqrt(self.e_par[0]**2.0 + (self.e_par[1]*self.wav_obs[self.spx_fit[1]])**2.0)
-        lsig0 = self.wav_res[self.spx_fit[1]] / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
-        e_lsig0 = self.wav_res[self.spx_fit[1]]*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
-        # lsig_llim = lsig0 - 3.0*e_lsig0
-        self.lsig0 = lsig0
-        self.lsig_llim = 0.5*self.lsig0
+        vsig0 = self.c / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
+        e_vsig0 = self.c*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
+        self.vsig0 = vsig0
+        self.vsig_llim = 0.5*self.vsig0
         if broad_component:
-            self.lsig_ulim = 5.0*self.lsig0
+            self.vsig_ulim = 5.0*self.vsig0
         else:
-            self.lsig_ulim = 2.0*self.lsig0
+            self.vsig_ulim = 2.0*self.vsig0
+
+        # lsig0 = self.wav_res[self.spx_fit[1]] / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
+        # e_lsig0 = self.wav_res[self.spx_fit[1]]*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
+        # # lsig_llim = lsig0 - 3.0*e_lsig0
+        # self.lsig0 = lsig0
+        # self.lsig_llim = 0.5*self.lsig0
+        # if broad_component:
+        #     self.lsig_ulim = 5.0*self.lsig0
+        # else:
+        #     self.lsig_ulim = 2.0*self.lsig0
 
 
     def model_func(self, theta, x):
@@ -200,15 +209,15 @@ class linefit:
 
         # Basic conditions
         icnd = 0
-        sig_cnd = ((theta[0] > self.lsig_llim) & (theta[0] < self.lsig_ulim))
+        sig_cnd = ((theta[0] > self.vsig_llim/self.c) & (theta[0] < self.vsig_ulim/self.c))
         icnd += 1*sig_cnd
 
         spec_sum = np.sum(np.abs(self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin])* \
                           (self.wav_res[1]-self.wav_res[0]))
 
         for i in np.arange(self.nlines):
-            mu_cnd = ((theta[2*i+1] > self.wav_fit[0]) & \
-                      (theta[2*i+1] < self.wav_fit[1]))
+            mu_cnd = ((theta[2*i+1] > np.log(self.wav_fit[0])) & \
+                      (theta[2*i+1] < np.log(self.wav_fit[1])))
             flx_cnd = ((theta[2*i+2] > 0.) & \
                        (theta[2*i+2] < 2.0*spec_sum))
             icnd += (1*mu_cnd + 1*flx_cnd)
@@ -223,26 +232,31 @@ class linefit:
 
         # Line 0, 1, 5: [OII]3727/3729, H beta, [OI]6300 (# of parameters = 3)
         if (self.line_num in [0, 1, 5]):
-            lsig_init = self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[0]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], lsig_init, 0.1))
+            vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[0]].item()
+            e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[0]].item()
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
 
             mu_init = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[0]].item()
-            fprior_mu = np.log(gauss_pdf(theta[1], mu_init, 0.5))
+            e_mu_init = self.fit_itg['e_mu'][self.fit_itg['line'] == self.line_names[0]].item()
+            fprior_mu = np.log(gauss_pdf(theta[1], np.log(mu_init), 10.*e_mu_init/mu_init))
 
             fprior_flx = 0.
 
         # Line 2: [OIII]4959/5007 (# of parameters = 5)
         if (self.line_num == 2):
-            lsig_init = self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[1]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], lsig_init, 0.1))
+            vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[1]].item()
+            e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[1]].item()
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
 
             fprior_mu = 0.
+            e_mu_init = self.fit_itg['e_mu'][self.fit_itg['line'] == self.line_names[0]].item()
             mu_init_arr = np.array([])
             for j in np.arange(self.nlines):
                 mu_init = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()
-                fprior_mu += np.log(gauss_pdf(theta[2*j+1], mu_init, 0.5))
+                fprior_mu += np.log(gauss_pdf(theta[2*j+1], np.log(mu_init), 10.*e_mu_init/mu_init))
                 mu_init_arr = np.append(mu_init_arr, mu_init)
-            fprior_mu = np.log(gauss_pdf(theta[3]-theta[1], np.diff(mu_init_arr)[0], 0.1))
+            fprior_mu += np.log(gauss_pdf(theta[3]-theta[1], np.log(mu_init_arr[1]/mu_init_arr[0]),
+                                          0.01*np.log(mu_init_arr[1]/mu_init_arr[0])))
 
             flx2_cnd = (theta[4]/theta[2] > 1.)
             if flx2_cnd:
@@ -252,17 +266,21 @@ class linefit:
 
         # Line 3: H alpha + [NII]6548/6584 (# of parameters = 7)
         if (self.line_num == 3):
-            lsig_init = self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[1]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], lsig_init, 0.1))
+            vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[1]].item()
+            e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[1]].item()
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
 
             fprior_mu = 0.
+            e_mu_init = self.fit_itg['e_mu'][self.fit_itg['line'] == self.line_names[0]].item()
             mu_init_arr = np.array([])
             for j in np.arange(self.nlines):
                 mu_init = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()
-                fprior_mu += np.log(gauss_pdf(theta[2*j+1], mu_init, 0.5))
+                fprior_mu += np.log(gauss_pdf(theta[2*j+1], np.log(mu_init), 10.*e_mu_init/mu_init))
                 mu_init_arr = np.append(mu_init_arr, mu_init)
-            fprior_mu += np.log(gauss_pdf(theta[3]-theta[1], np.diff(mu_init_arr)[0], 0.1))
-            fprior_mu += np.log(gauss_pdf(theta[5]-theta[3], np.diff(mu_init_arr)[1], 0.1))
+            fprior_mu += np.log(gauss_pdf(theta[3]-theta[1], np.log(mu_init_arr[1]/mu_init_arr[0]),
+                                          0.01*np.log(mu_init_arr[1]/mu_init_arr[0])))
+            fprior_mu += np.log(gauss_pdf(theta[5]-theta[3], np.log(mu_init_arr[2]/mu_init_arr[1]),
+                                          0.01*np.log(mu_init_arr[2]/mu_init_arr[1])))            
 
             flx2_cnd = ((theta[4]/theta[2] > 1.) & (theta[4]/theta[6] > 1.) & \
                         (theta[6]/theta[2] > 1.))
@@ -273,16 +291,19 @@ class linefit:
 
         # Line 4: [SII]6717/6731 (# of parameters = 5)
         if (self.line_num == 4):
-            lsig_init = self.fit_itg['lsig'][self.fit_itg['line'] == self.line_names[0]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], lsig_init, 0.1))
+            vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[0]].item()
+            e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[0]].item()
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
 
             fprior_mu = 0.
+            e_mu_init = self.fit_itg['e_mu'][self.fit_itg['line'] == self.line_names[1]].item()
             mu_init_arr = np.array([])
             for j in np.arange(self.nlines):
                 mu_init = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()
-                fprior_mu += np.log(gauss_pdf(theta[2*j+1], mu_init, 0.5))
+                fprior_mu += np.log(gauss_pdf(theta[2*j+1], np.log(mu_init), 10.*e_mu_init/mu_init))
                 mu_init_arr = np.append(mu_init_arr, mu_init)
-            fprior_mu += np.log(gauss_pdf(theta[3]-theta[1], np.diff(mu_init_arr)[0], 0.1))
+            fprior_mu += np.log(gauss_pdf(theta[3]-theta[1], np.log(mu_init_arr[1]/mu_init_arr[0]),
+                                          0.01*np.log(mu_init_arr[1]/mu_init_arr[0])))
 
             fprior_flx = 0.
 
@@ -353,11 +374,15 @@ class linefit:
 
             Yfit = self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin] - broad_sum
 
+        Xfit2 = np.log(Xfit)
+        Yfit2 = Xfit * Yfit
+        e_Yfit2 = Xfit * e_Yfit
+
         # Finding the initial guess
         initial = np.zeros(ndim)
-        initial[0] = self.lsig0
+        initial[0] = self.vsig0 / self.c
         for j in np.arange(self.nlines):
-            initial[2*j+1] = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item()
+            initial[2*j+1] = np.log(self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[j]].item())
             initial[2*j+2] = spec_sum
 
         # Running MCMC
@@ -365,21 +390,24 @@ class linefit:
 
         pos = np.zeros((nwalkers, ndim))
         np.random.seed(0)
-        pos[:,0] = truncnorm.rvs(self.lsig_llim, self.lsig_ulim,
+        pos[:,0] = truncnorm.rvs((self.vsig_llim/self.c - initial[0]) / fluct0,
+                                 (self.vsig_ulim/self.c - initial[0]) / fluct0,
                                  loc=initial[0], scale=fluct0, size=nwalkers)
 
         for i in np.arange(1, ndim, 1):
             if (i % 2 == 1):
-                pos[:,i] = truncnorm.rvs(self.wav_fit[0], self.wav_fit[1],
+                pos[:,i] = truncnorm.rvs((np.log(self.wav_fit[0]) - initial[i]) / fluct1,
+                                         (np.log(self.wav_fit[1]) - initial[i]) / fluct1,
                                          loc=initial[i], scale=fluct1, size=nwalkers)
             elif (i % 2 == 0):
-                pos[:,i] = truncnorm.rvs(0., 2.0*spec_sum,
+                pos[:,i] = truncnorm.rvs((0. - initial[i]) / fluct2,
+                                         (2.0*spec_sum - initial[i]) / fluct2,
                                          loc=initial[i], scale=fluct2, size=nwalkers)
         # print(pos)
 
         # pos = soln.x + fluct*np.random.randn(nwalkers, ndim)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior,
-                                        args=(Xfit, Yfit, e_Yfit))
+                                        args=(Xfit2, Yfit2, e_Yfit2))
         sampler.run_mcmc(pos, ndiscard+nsample, progress=True)
         flat_samples = sampler.get_chain(discard=ndiscard, flat=True)
                 
@@ -396,6 +424,17 @@ class linefit:
         perr = np.array(perr)
         g1 = np.array(g1)
         k1 = np.array(k1)
+        print(popt)
+
+        popt2 = []
+        popt2.append(popt[0]*np.median(Xfit))
+        for j in 1+np.arange(ndim-1):
+            if (j % 2 == 1):
+                popt2.append(np.exp(popt[j]))
+            else:
+                popt2.append(popt[j])
+        popt2 = np.array(popt2)
+        print(popt2)
 
 
         if check:
@@ -429,8 +468,8 @@ class linefit:
             ax.set_xlabel(r"Rest-frame wavelength [${\rm \AA}$]", fontsize=20.0)
             ax.set_ylabel(r"Flux [${\rm 10^{-15}~erg~cm^{-2}~s^{-1}~\AA^{-1}}$]", fontsize=20.0)
             ax.plot(self.wav_res, self.dat[:, ibin], linewidth=3.0, alpha=0.7)
-            ax.plot(self.wav_res, self.model_func(popt, self.wav_res), linewidth=3.0, alpha=0.7)
-            resi = -0.7*np.abs(np.max(Ydat))+self.dat[:, ibin]-self.model_func(popt, self.wav_res)
+            ax.plot(self.wav_res, self.model_func(popt2, self.wav_res), linewidth=3.0, alpha=0.7)
+            resi = -0.7*np.abs(np.max(Ydat))+self.dat[:, ibin]-self.model_func(popt2, self.wav_res)
             if broad_component:
                 broad_sum_totwav = np.zeros_like(self.wav_res)
                 for b in np.arange(len(self.fit_itgb)):
@@ -445,17 +484,17 @@ class linefit:
             plt.close()
 
 
-        vsig = self.c*popt[0]/popt[1::2]
-        e_vsig = vsig*np.sqrt((perr[1::2]/popt[1::2])**2.+(perr[0]/popt[0])**2.)
+        vsig = self.c*popt[0]
+        e_vsig = self.c*perr[0]
         snr = popt[2::2] / perr[2::2]
 
-        Ymod = self.model_func(popt, self.wav_res)[self.spx_fit[0]:self.spx_fit[1]+1]
+        Ymod = self.model_func(popt, np.log(self.wav_res))[self.spx_fit[0]:self.spx_fit[1]+1]
         rchisq = []
         for j in np.arange(self.nlines):
-            spx_line = [np.abs(Xfit-(popt[1::2][j]-3*popt[0])).argmin(),
-                        np.abs(Xfit-(popt[1::2][j]+3*popt[0])).argmin()]
-            chisq = ((Yfit-Ymod)/e_Yfit)**2.
-            dof = len(Yfit[spx_line[0]:spx_line[1]+1])-3
+            spx_line = [np.abs(Xfit2-(popt[1::2][j]-3*popt[0])).argmin(),
+                        np.abs(Xfit2-(popt[1::2][j]+3*popt[0])).argmin()]
+            chisq = ((Yfit2-Ymod)/e_Yfit2)**2.
+            dof = len(Yfit2[spx_line[0]:spx_line[1]+1])-3
             rchisq.append(np.sum(chisq[spx_line[0]:spx_line[1]+1]) / dof)
         # rchisq = np.sum(((Yfit-Ymod)/e_Yfit)**2.) / (len(Yfit)-ndim)
 
@@ -465,8 +504,8 @@ class linefit:
             broad = 0.0
 
         df = pd.DataFrame(data = {'line': self.line_names,
-                                  'mu': popt[1::2],#popt[0::3],
-                                  'e_mu': perr[1::2],#perr[0::3],
+                                  'mu': np.exp(popt[1::2]),#popt[0::3],
+                                  'e_mu': np.exp(popt[1::2])*perr[1::2],#perr[0::3],
                                   'g1_mu': g1[1::2],
                                   'k1_mu': k1[1::2],
                                   'sigma': [popt[0]]*len(self.line_names),#popt[1::3],
@@ -521,31 +560,35 @@ if (__name__ == '__main__'):
         df1 = l1.solve(ibin, check=True, nwalkers=50,
                        ndiscard=1000, nsample=1000,
                        fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta1 = df1.values[0, 5]
+        theta1 = df1['sigma'].values[0]
         for ln in np.arange(l1.nlines):
-            theta1 = np.append(theta1, df1.values[ln, 1:10:8])
+            theta1 = np.append(theta1, np.log(df1['mu'].values[ln]))
+            theta1 = np.append(theta1, df1['flux'].values[ln])
         print(l1.log_prior(theta1, ibin))
 
         df2 = l2.solve(ibin, check=True, nwalkers=50,
                        ndiscard=1000, nsample=1000,
                        fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta2 = df2.values[0, 5]
+        theta2 = df2['sigma'].values[0]
         for ln in np.arange(l2.nlines):
-            theta2 = np.append(theta2, df2.values[ln, 1:10:8])
+            theta2 = np.append(theta2, np.log(df2['mu'].values[ln]))
+            theta2 = np.append(theta2, df2['flux'].values[ln])
         print(l2.log_prior(theta2, ibin))
 
         df3 = l3.solve(ibin, check=True, nwalkers=50,
                        ndiscard=1000, nsample=1000,
                        fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta3 = df3.values[0, 5]
+        theta3 = df3['sigma'].values[0]
         for ln in np.arange(l3.nlines):
-            theta3 = np.append(theta3, df3.values[ln, 1:10:8])
+            theta3 = np.append(theta3, np.log(df3['mu'].values[ln]))
+            theta3 = np.append(theta3, df3['flux'].values[ln])
         print(l3.log_prior(theta3, ibin))
 
         df4 = l4.solve(ibin, check=True, nwalkers=50,
                        ndiscard=1000, nsample=1000,
                        fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4)
-        theta4 = df4.values[0, 5]
+        theta4 = df4['sigma'].values[0]
         for ln in np.arange(l4.nlines):
-            theta4 = np.append(theta4, df4.values[ln, 1:10:8])
+            theta4 = np.append(theta4, np.log(df4['mu'].values[ln]))
+            theta4 = np.append(theta4, df4['flux'].values[ln])
         print(l4.log_prior(theta4, ibin))
