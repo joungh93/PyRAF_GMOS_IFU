@@ -179,16 +179,6 @@ class linefit:
         else:
             self.vsig_ulim = 2.0*self.vsig0
 
-        # lsig0 = self.wav_res[self.spx_fit[1]] / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
-        # e_lsig0 = self.wav_res[self.spx_fit[1]]*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
-        # # lsig_llim = lsig0 - 3.0*e_lsig0
-        # self.lsig0 = lsig0
-        # self.lsig_llim = 0.5*self.lsig0
-        # if broad_component:
-        #     self.lsig_ulim = 5.0*self.lsig0
-        # else:
-        #     self.lsig_ulim = 2.0*self.lsig0
-
 
     def model_func(self, theta, x):
         dx = x[1]-x[0]
@@ -235,7 +225,7 @@ class linefit:
         if (self.line_num in [0, 1, 5]):
             vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[0]].item()
             e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[0]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10./self.c))
 
             mu_init = self.fit_itg['mu'][self.fit_itg['line'] == self.line_names[0]].item()
             e_mu_init = self.fit_itg['e_mu'][self.fit_itg['line'] == self.line_names[0]].item()
@@ -247,7 +237,7 @@ class linefit:
         if (self.line_num == 2):
             vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[1]].item()
             e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[1]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10./self.c))
 
             fprior_mu = 0.
             mu_init_arr = np.array([])
@@ -269,7 +259,7 @@ class linefit:
         if (self.line_num == 3):
             vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[1]].item()
             e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[1]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10./self.c))
 
             fprior_mu = 0.
             mu_init_arr = np.array([])
@@ -294,7 +284,7 @@ class linefit:
         if (self.line_num == 4):
             vsig_init = self.fit_itg['vsig'][self.fit_itg['line'] == self.line_names[0]].item()
             e_vsig_init = self.fit_itg['e_vsig'][self.fit_itg['line'] == self.line_names[0]].item()
-            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10.*e_vsig_init/self.c))
+            fprior_sigma = np.log(gauss_pdf(theta[0], vsig_init/self.c, 10./self.c))
 
             fprior_mu = 0.
             mu_init_arr = np.array([])
@@ -331,7 +321,10 @@ class linefit:
             broad_sum = np.zeros_like(Yfit)
             bfac = self.data_bfac[self.data_vbin == ibin][0]
 
-            if (self.fit_itgb.size == 1):
+            if (bfac < 0.01):
+                broad_sum += 0.
+
+            elif (self.fit_itgb.size == 1):
                 bline = self.fit_itgb['line'].item()
                 if (self.line_num == int(bline[5])):
                     bpar = [self.fit_itgb['mu'].item(), self.fit_itgb['lsig'].item(),
@@ -455,16 +448,16 @@ class linefit:
                 if (self.fit_itgb.size == 1):
                     broad_totwav = gauss_cdf_scale(self.wav_res, self.fit_itgb['mu'].item(),
                                                    self.fit_itgb['lsig'].item(), bfac*self.fit_itgb['flux'].item())
-                    ax.plot(self.wav_res, broad_totwav,
-                            linewidth=2.5, linestyle='--', color='red', alpha=0.6)
+                    if ((self.fit_itgb['mu'].item() > Xfit[0]-25.0) & (self.fit_itgb['mu'].item() < Xfit[-1]+25.0)):
+                        ax.plot(self.wav_res, broad_totwav, linewidth=2.5, linestyle='--', color='red', alpha=0.6)
                     broad_sum_totwav += broad_totwav
                 else:
                     for b in np.arange(self.fit_itgb.size):
                         broad_totwav = gauss_cdf_scale(self.wav_res, self.fit_itgb['mu'][b],
                                                        self.fit_itgb['lsig'][b], self.fit_itgb['flux'][b]*bfac)
-                    ax.plot(self.wav_res, broad_totwav,
-                            linewidth=2.5, linestyle='--', color='red', alpha=0.6)
-                    broad_sum_totwav += broad_totwav    
+                        if ((self.fit_itgb['mu'][b] > Xfit[0]-25.0) & (self.fit_itgb['mu'][b] < Xfit[-1]+25.0)):
+                            ax.plot(self.wav_res, broad_totwav, linewidth=2.5, linestyle='--', color='red', alpha=0.6)
+                        broad_sum_totwav += broad_totwav    
                 resi -= broad_sum_totwav
             
             ax.plot(self.wav_res, resi, linewidth=2.5, color='green', alpha=0.6)
