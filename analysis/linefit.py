@@ -349,7 +349,8 @@ class linefit:
                 else:
                     for b in np.arange(nbroad):
                         comp = (bline == f"Broad{self.line_num:d}_{b+1:d}")
-                        bpar = [bmu[comp].item(), blsig[comp].item(), bfac*bflux[comp].item()]
+                        bpar = [self.fit_itgb['mu'][comp].item(), self.fit_itgb['lsig'][comp].item(),
+                                bfac*self.fit_itgb['flux'][comp].item()]
                         broad_sum += gauss_cdf_scale(Xfit, *bpar)
 
             Yfit = self.dat[self.spx_fit[0]:self.spx_fit[1]+1, ibin] - broad_sum
