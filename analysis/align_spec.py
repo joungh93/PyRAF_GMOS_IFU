@@ -57,7 +57,7 @@ for i in np.arange(len(ic.cube_list)):
 			func_sci = interpolate.interp1d(wav, d_sci[:,y,x], kind='linear')
 			func_var = interpolate.interp1d(wav, d_var[:,y,x], kind='linear')
 			d_scin[:,y,x] = func_sci(wav_new)
-			d_varn[:,y,x] = func_var(wav_new)
+			d_varn[:,y,x] = func_var(wav_new) * (h_sci['CD3_3']/ic.wav_intv)
 
 	os.chdir(dir_cb2)
 
