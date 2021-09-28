@@ -20,17 +20,18 @@ import imgscl
 from scipy import ndimage
 from skimage.registration import phase_cross_correlation
 from astropy.cosmology import FlatLambdaCDM
+import init_cfg as ic
 
 
 # ----- Loading the original HST image ----- #
 
 # Directories
-dir_fig = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/diagram/linefits/'
-diI = '/data/jlee/DATA/HLA/McPartland+16/MACS1752/JFG2/Phot/'
-diG = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/redux4_700/'
+dir_fig = ic.cpath+"diagram/linefits/"
+diI = "/data/jlee/DATA/HLA/McPartland+16/MACS1258/JFG1/Phot/"
+diG = ic.dir_redux
 
 # Reading central RA & Dec
-hdr1 = fits.getheader(diG+'cstxeqxbrgN20190611S0257_3D.fits', ext=0)
+hdr1 = fits.getheader(ic.cube_list[0], ext=0)
 gra, gdec, gpa = hdr1['RA'], hdr1['DEC'], hdr1['PA']
 
 # Reading FITS images and creating RGB data
@@ -79,7 +80,7 @@ for i in np.arange(no_sign_idx.shape[0]):
 
 # ----- Reading H alpha data ----- #
 cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Tcmb0=2.725)
-redshift = 0.3527
+redshift = ic.redshift
 dist_lum = cosmo.luminosity_distance(redshift).value*1.0e+6    # pc
 c = 2.99792e+5    # km/s
 ang_scale = cosmo.kpc_proper_per_arcmin(redshift).value / 60.    # kpc/arcsec
@@ -94,7 +95,7 @@ e_lsig0 = wav_Ha*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
 lsig_llim = lsig0 - 1.0*e_lsig0
 vsig0 = c / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
 
-dir_Ha = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/lines2/Halpha/'
+dir_Ha = ic.cpath+'lines3/Halpha/'
 Ha_flx = fits.getdata(dir_Ha+'flux_2D.fits', ext=0)
 Ha_snr = fits.getdata(dir_Ha+'snr_2D.fits', ext=0)
 Ha_sig = fits.getdata(dir_Ha+'sigma_2D.fits', ext=0)
@@ -167,7 +168,7 @@ def plot_contour(hst_Data, sflux_Data, out, legend_position='lower left',
                    origin='lower', aspect='equal')
 
     sig = np.std(sflux_Data)
-    lvs = [0.5*sig, 1.*sig, 2.*sig, 3.*sig, 5.*sig, 7.*sig]
+    lvs = [0.25*sig, 0.5*sig, 1.*sig, 3.*sig, 5.*sig, 7.5*sig]
     lws = tuple(np.repeat(3.75, len(lvs)-1))
     cs = tuple(['magenta']*(len(lvs)-1))
 
@@ -202,8 +203,8 @@ def plot_contour(hst_Data, sflux_Data, out, legend_position='lower left',
     plt.close()
 
 plot_contour(corr_hstimg, sflx, dir_fig+"Halpha_contour", legend_position='lower left',
-             x0=-2.75, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
-             xN=-1.90, yN=1.25, xE=-2.95, yE=2.10)
+             x0=3.00, y0=1.75, sign=1, L=0.6, theta0=gpa*(np.pi/180.0),
+             xN=2.00, yN=2.10, xE=2.40, yE=0.80)
 
 
 # ----- Saving the results ----- #
