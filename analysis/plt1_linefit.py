@@ -28,9 +28,9 @@ warnings.filterwarnings("ignore")
 
 
 # ----- Directory ----- #
-dir_fig = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/diagram/linefits/'
-diG = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/redux4_700/'
-dir_lines = '/data/jlee/DATA/Gemini/Programs/GN-2019A-Q-215/analysis/lines2/'
+dir_fig = ic.cpath+"diagram/linefits/"
+diG = ic.dir_redux
+dir_lines = ic.cpath+"lines3/"
 glob_lines = glob.glob(dir_lines+'*')
 
 emi_lines = []
@@ -55,11 +55,11 @@ name_elines = [r"${\rm H\alpha}$", r"${\rm H\beta}$", r"${\rm [NII]\lambda6548}$
 
 # ----- Basic parameters ----- #
 cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Tcmb0=2.725)
-redshift = 0.3527
+redshift = ic.redshift
 dist_lum = cosmo.luminosity_distance(redshift).value*1.0e+6    # pc
 c = 2.99792e+5    # km/s
 ang_scale = cosmo.kpc_proper_per_arcmin(redshift).value / 60.    # kpc/arcsec
-pixel_scale = 0.1    # arcsec/pix
+pixel_scale = ic.pixel_scale    # arcsec/pix
 
 # Angstrom (SDSS)
 wav_lines = [6564.61, 4862.68, 6549.86, 6585.27,
@@ -95,7 +95,7 @@ for l in np.arange(len(emi_lines)):
     exec("e_"+emi_lines[l]+"_flux_2D = fluxerr")
 
 # Reading central RA & Dec
-hdr1 = fits.getheader(diG+'cstxeqxbrgN20190611S0257_3D.fits', ext=0)
+hdr1 = fits.getheader(ic.cube_list[0], ext=0)
 gra, gdec, gpa = hdr1['RA'], hdr1['DEC'], hdr1['PA']
 
 
@@ -131,14 +131,14 @@ flx_Data[zero_cnd] = 0.
 sflx = ndimage.gaussian_filter(flx_Data, sigma=(1.25,1.25), order=0)
 
 sig = np.std(sflx)
-lvs = [0.5*sig, 1.*sig, 2.*sig, 3.*sig, 5.*sig, 7.*sig]
+lvs = [0.25*sig, 0.5*sig, 1.*sig, 3.*sig, 5.*sig, 7.5*sig]
 lws = tuple(np.repeat(2.5, len(lvs)-1))
 cs = tuple(['gray']*(len(lvs)-1))
 
 
 # ----- Custom functions ----- #
-pltFlags = {'x0':-2.75, 'y0':1.25, 'sign':-1, 'L':0.6, 'theta0':gpa*(np.pi/180.0),
-            'xN':-1.90, 'yN':1.25, 'xE':-2.95, 'yE':2.10, 'legend_position':'lower left'}
+pltFlags = {'x0':3.00, 'y0':1.75, 'sign':1, 'L':0.6, 'theta0':gpa*(np.pi/180.0),
+            'xN':2.00, 'yN':2.10, 'xE':2.40, 'yE':0.80, 'legend_position':'lower left'}
 
 
 def plot_2Dmap(plt_Data, title, v_low, v_high, out, cmap='gray_r',
@@ -247,7 +247,7 @@ for l in np.arange(len(emi_lines)):
     exec(emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("e_"+emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("plt_Data = "+emi_lines[l]+"_flux_2D")
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
                dir_fig+"Map_flux_"+emi_lines[l],
                cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]', **pltFlags)
@@ -258,7 +258,7 @@ for l in np.arange(len(emi_lines)):
 for l in np.arange(len(emi_lines)):
     exec("plt_Data = "+emi_lines[l]+"_snrpix_2D")
     plt_Data[zero_cnd] = 0.
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
 
     plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
                dir_fig+"Map_snr_"+emi_lines[l],
@@ -281,30 +281,41 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 # ----- END: Radial velocity distribution (H alpha) map ----- #
 
 
-# ----- START: Velocity dispersion (H alpha) map ----- #
-plt_Data = np.sqrt(Halpha_vsig_2D**2.0 - vsig0**2.0)
-# e_plt_Data = np.abs(Halpha_vsig_2D/plt_Data) * e_
-plt_Data[((Halpha_vsig_2D > 0.) & (Halpha_vsig_2D <= vsig0))] = 0.
-plt_Data[zero_cnd] = np.nan
-Vdd = plt_Data
+# ----- START: Velocity dispersion map ----- #
+emi_lines2 = ["Halpha", "Hbeta", "OII3727", "OIII5007", "SII6717"]
+name_elines2 = [r"${\rm H\alpha}$", r"${\rm H\beta}$",
+                r"${\rm [OII]\lambda\lambda3727,3729}$", r"${\rm [OIII]\lambda5007}$",
+                r"${\rm [SII]\lambda6717}$"]
+wav_lines2 = [6564.61, 4862.68, 3727.092, 5008.240, 6718.29]
+for i, l in enumerate(emi_lines2):
+    Rmax1 = par[0] + par[1]*wav_lines2[i]*(1+redshift)
+    vsig1 = c / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax1)
+    exec("vsig2 = "+l+"_vsig_2D")
+    exec("e_vsig2 = "+l+"_e_vsig_2D")
+    plt_Data = np.sqrt(vsig2**2.0 - vsig1**2.0)
+    e_plt_Data = np.abs(vsig2 / plt_Data) * e_vsig2
+    plt_Data[((vsig2 > 0.) & (vsig2 <= vsig1))] = 0.
+    plt_Data[zero_cnd] = np.nan
+    e_plt_Data[zero_cnd] = np.nan
+    Vdd, e_Vdd = plt_Data, e_plt_Data
 
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+    v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
 
-plot_2Dmap(plt_Data, "Velocity dispersion map", 0.0, v_high+25.0,
-           dir_fig+"Map_vd_Halpha", cmap='rainbow',
-           cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]", **pltFlags)
+    plot_2Dmap(plt_Data, r"Velocity dispersion map ("+name_elines2[i]+")",
+               v_low-25.0, v_high+25.0, dir_fig+"Map_vd_"+l, cmap='rainbow',
+               cb_label=r"Velocity dispersion [${\rm km~s^{-1}}$]", **pltFlags)
 
-# Flux-weighted mean
-val_vdd = ((np.isnan(plt_Data) == False) & (plt_Data > 0.))
-fwm_vdisp = weighted_mean(data=plt_Data[val_vdd], weights=Halpha_flux_2D[val_vdd])
+    # Flux-weighted mean
+    val_vdd = ((np.isnan(plt_Data) == False) & (plt_Data > 0.))
+    fwm_vdisp, e_fwm_vdisp = weighted_mean(data=plt_Data[val_vdd], weights=Halpha_flux_2D[val_vdd],
+                                           e_data=e_plt_Data[val_vdd], e_weights=e_Halpha_flux_2D[val_vdd])
 
-# fwm_vdisp = np.average(plt_Data[np.isnan(plt_Data) == False],
-#                        weights=Halpha_flux_2D[np.isnan(plt_Data) == False])
+    print("Flux-weighted mean of velocity dispersion ("+l+f") : {fwm_vdisp:.2f} +/- {e_fwm_vdisp:.2f} km/s")
 
-# Error propagation (later, "e_vdisp_2D is not available currently."")
-
-print(f"Flux-weighted mean of velocity dispersion : {fwm_vdisp:.2f} km/s")
-# ----- END: Velocity dispersion (H alpha) map ----- #
+    # Error map
+    plot_2Dmap(plt_Data/e_plt_Data, r"Velocity dispersion S/N map ("+name_elines2[i]+")", 0.0, 3.0,
+               dir_fig+"Map_evd_"+l, cmap='rainbow', **pltFlags)
+# ----- END: Velocity dispersion map ----- #
 
 
 # ----- START: H alpha / H beta flux ratio map ----- #
@@ -355,7 +366,7 @@ def compute_SFR(Ha_flux, Hab_ratio, luminosity_distance,
     return [SFR, e_SFR, A_V]
 
 Hab = np.ones_like(plt_Data) * fwm_Hab    # Assumption (to be revised later)
-EBV_gal = 0.026
+EBV_gal = 0.012
 SFR, e_SFR, A_V = compute_SFR(Halpha_flux_2D, Hab, dist_lum, 
                               e_Halpha_flux_2D, e_fwm_Hab, EBV_gal=EBV_gal, apply_C00=False)
 val_SFR = (SFR > 0.)
@@ -659,205 +670,205 @@ plt.savefig(dir_fig+'BPT_map.png', dpi=300)
 plt.close()
 # ----- END: BPT spatial map ----- #
 
-'''
-# ----- Applying NebulaBayes ----- #
-import NebulaBayes 
-dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
-from NebulaBayes import NB_Model
+# '''
+# # ----- Applying NebulaBayes ----- #
+# import NebulaBayes 
+# dir_NB = "/".join(os.path.abspath(NebulaBayes.__file__).split("/")[:-1])
+# from NebulaBayes import NB_Model
 
-# These HII-region optical emission-line fluxes have already been dereddened
-norm_line = "Halpha"
-linelist_NBinput = ["Hbeta", "OII3729", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
-linelist_GEMname = ["Hbeta", "OII3727", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
+# # These HII-region optical emission-line fluxes have already been dereddened
+# norm_line = "Halpha"
+# linelist_NBinput = ["Hbeta", "OII3729", "OIII5007", "Halpha", "NII6583", "SII6716", "SII6731"]
+# linelist_GEMname = ["Hbeta", "OII3727", "OIII5007", "Halpha", "NII6584", "SII6717", "SII6731"]
 
-df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
-wavlist_NBinput = []
-for l in linelist_NBinput:
-    wavlist_NBinput.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
+# df_ll = pd.read_csv(dir_NB+"/grids/Linelist.csv")
+# wavlist_NBinput = []
+# for l in linelist_NBinput:
+#     wavlist_NBinput.append(df_ll['Lambda_AA'][df_ll['Grid_name'] == l].values[0])
 
-# Set outputs:
-OUT_DIR = dir_fig+"NB_HII"
-if (glob.glob(OUT_DIR) == []):
-    os.system("mkdir "+OUT_DIR)
-else:
-    os.system("rm -rf "+OUT_DIR+"/*")
+# # Set outputs:
+# OUT_DIR = dir_fig+"NB_HII"
+# if (glob.glob(OUT_DIR) == []):
+#     os.system("mkdir "+OUT_DIR)
+# else:
+#     os.system("rm -rf "+OUT_DIR+"/*")
 
-# Initialize the NB_Model, which loads and interpolates the model flux grids:
-grid_table_file = os.path.join(dir_NB, "grids", "NB_HII_grid.fits.gz")
-BinTableHDU_0 = fits.getdata(grid_table_file, ext=0)
-DF_grid = Table(BinTableHDU_0).to_pandas()
-DF_grid = DF_grid[DF_grid["log P/k"] == 5.8]    # Fixing log P/k = 5.8
-grid_params = ["log U", "12 + log O/H"]
+# # Initialize the NB_Model, which loads and interpolates the model flux grids:
+# grid_table_file = os.path.join(dir_NB, "grids", "NB_HII_grid.fits.gz")
+# BinTableHDU_0 = fits.getdata(grid_table_file, ext=0)
+# DF_grid = Table(BinTableHDU_0).to_pandas()
+# DF_grid = DF_grid[DF_grid["log P/k"] == 5.8]    # Fixing log P/k = 5.8
+# grid_params = ["log U", "12 + log O/H"]
 
-Ngrid = (100, 200)    # less than 60000
-NB_Model_HII = NB_Model(DF_grid, grid_params, line_list=linelist_NBinput,
-                        interpd_grid_shape=Ngrid, grid_error=0.1)
+# Ngrid = (100, 200)    # less than 60000
+# NB_Model_HII = NB_Model(DF_grid, grid_params, line_list=linelist_NBinput,
+#                         interpd_grid_shape=Ngrid, grid_error=0.1)
 
-# Setting custom prior
-Result0_HII = NB_Model_HII([1.]*len(linelist_NBinput), [0.1]*len(linelist_NBinput),
-                           linelist_NBinput, norm_line=norm_line)
-grid_spec = Result0_HII.Posterior.Grid_spec
-param_cut = [[-3.75, -3.0], [7.663, 8.76]]
-prior = np.ones(grid_spec.shape)
-prior_func = "Gaussian"    # "Uniform", "Gaussian"
-sigma_func = [0.1, 0.1]
-for p in np.arange(len(grid_params)):
-    param_idx = grid_spec.param_names.index(grid_params[p])
-    all_values = grid_spec.param_values_arrs[param_idx]    # Sorted 1D array
+# # Setting custom prior
+# Result0_HII = NB_Model_HII([1.]*len(linelist_NBinput), [0.1]*len(linelist_NBinput),
+#                            linelist_NBinput, norm_line=norm_line)
+# grid_spec = Result0_HII.Posterior.Grid_spec
+# param_cut = [[-3.75, -3.0], [7.663, 8.76]]
+# prior = np.ones(grid_spec.shape)
+# prior_func = "Gaussian"    # "Uniform", "Gaussian"
+# sigma_func = [0.1, 0.1]
+# for p in np.arange(len(grid_params)):
+#     param_idx = grid_spec.param_names.index(grid_params[p])
+#     all_values = grid_spec.param_values_arrs[param_idx]    # Sorted 1D array
 
-    cut_lo, cut_hi = param_cut[p][0], param_cut[p][1]
-    prior_1D = np.ones_like(all_values)
+#     cut_lo, cut_hi = param_cut[p][0], param_cut[p][1]
+#     prior_1D = np.ones_like(all_values)
 
-    if (prior_func == "Uniform"):
-        prior_1D[all_values >= cut_hi] = 0.
-        prior_1D[all_values <= cut_lo] = 0.
+#     if (prior_func == "Uniform"):
+#         prior_1D[all_values >= cut_hi] = 0.
+#         prior_1D[all_values <= cut_lo] = 0.
 
-    if (prior_func == "Gaussian"):
-        gauss_lo = np.exp(-((all_values-cut_lo)/sigma_func[p])**2 / 2.)
-        gauss_hi = np.exp(-((all_values-cut_hi)/sigma_func[p])**2 / 2.)
-        prior_1D[all_values <= cut_lo] = gauss_lo[all_values <= cut_lo]
-        prior_1D[all_values >= cut_hi] = gauss_hi[all_values >= cut_hi]
+#     if (prior_func == "Gaussian"):
+#         gauss_lo = np.exp(-((all_values-cut_lo)/sigma_func[p])**2 / 2.)
+#         gauss_hi = np.exp(-((all_values-cut_hi)/sigma_func[p])**2 / 2.)
+#         prior_1D[all_values <= cut_lo] = gauss_lo[all_values <= cut_lo]
+#         prior_1D[all_values >= cut_hi] = gauss_hi[all_values >= cut_hi]
 
-    # This array has only one dimension.  Construct a slice to use numpy
-    # "broadcasting" to apply the 1D prior over the whole 2D grid:
-    # (The following method works in nD, although here it's a 2D grid)
-    slice_NLR = [np.newaxis for _ in grid_spec.shape]
-    slice_NLR[param_idx] = slice(None)  # "[slice(None)]" means "[:]"
-    slice_NLR = tuple(slice_NLR)
-    prior *= prior_1D[slice_NLR]
+#     # This array has only one dimension.  Construct a slice to use numpy
+#     # "broadcasting" to apply the 1D prior over the whole 2D grid:
+#     # (The following method works in nD, although here it's a 2D grid)
+#     slice_NLR = [np.newaxis for _ in grid_spec.shape]
+#     slice_NLR[param_idx] = slice(None)  # "[slice(None)]" means "[:]"
+#     slice_NLR = tuple(slice_NLR)
+#     prior *= prior_1D[slice_NLR]
 
-# Initializing parameters
-NB_logOH_2D = np.zeros_like(Halpha_flux_2D)
-NB_logU_2D = np.zeros_like(Halpha_flux_2D)
-fault_bin = []
+# # Initializing parameters
+# NB_logOH_2D = np.zeros_like(Halpha_flux_2D)
+# NB_logU_2D = np.zeros_like(Halpha_flux_2D)
+# fault_bin = []
 
-# Calculating weight-mean flux ratio in advance
-flx0_Data = copy.deepcopy(Halpha_flux_2D)
-e_flx0_Data = copy.deepcopy(e_Halpha_flux_2D)
-flx0_sum = np.sum(flx0_Data)
-e_flx0_sum = np.sqrt(np.sum(e_flx0_Data**2.))
+# # Calculating weight-mean flux ratio in advance
+# flx0_Data = copy.deepcopy(Halpha_flux_2D)
+# e_flx0_Data = copy.deepcopy(e_Halpha_flux_2D)
+# flx0_sum = np.sum(flx0_Data)
+# e_flx0_sum = np.sqrt(np.sum(e_flx0_Data**2.))
 
-wm_ratios, e_wm_ratios = [], []
-for l in linelist_GEMname:
-    exec("flx1_Data = copy.deepcopy("+l+"_flux_2D)")
-    exec("e_flx1_Data = copy.deepcopy(e_"+l+"_flux_2D)")
-    exec("snr_Data = copy.deepcopy("+l+"_snr_2D)")
+# wm_ratios, e_wm_ratios = [], []
+# for l in linelist_GEMname:
+#     exec("flx1_Data = copy.deepcopy("+l+"_flux_2D)")
+#     exec("e_flx1_Data = copy.deepcopy(e_"+l+"_flux_2D)")
+#     exec("snr_Data = copy.deepcopy("+l+"_snr_2D)")
     
-    flx_ratio = flx1_Data / flx0_Data
-    snr2_cnd = (snr_Data < 3.0)
-    zero2_cnd = (zero_cnd | snr2_cnd)
-    flx_ratio[zero2_cnd] = 0.
-    flx_ratio[flx_ratio == 0.] = np.nan
-    flx_ratio[np.isinf(flx_ratio) == True] = np.nan
-    e_flx_ratio = flx_ratio * np.sqrt((e_flx0_Data/flx0_Data)**2 + (e_flx1_Data/flx1_Data)**2)
-    val = (np.isnan(flx_ratio) == False)
-    wm, e_wm = weighted_mean(flx_ratio[val], flx0_Data[val], e_data=e_flx_ratio[val], e_weights=e_flx0_Data[val])
-    wm_ratios.append(wm)
-    e_wm_ratios.append(e_wm)
+#     flx_ratio = flx1_Data / flx0_Data
+#     snr2_cnd = (snr_Data < 3.0)
+#     zero2_cnd = (zero_cnd | snr2_cnd)
+#     flx_ratio[zero2_cnd] = 0.
+#     flx_ratio[flx_ratio == 0.] = np.nan
+#     flx_ratio[np.isinf(flx_ratio) == True] = np.nan
+#     e_flx_ratio = flx_ratio * np.sqrt((e_flx0_Data/flx0_Data)**2 + (e_flx1_Data/flx1_Data)**2)
+#     val = (np.isnan(flx_ratio) == False)
+#     wm, e_wm = weighted_mean(flx_ratio[val], flx0_Data[val], e_data=e_flx_ratio[val], e_weights=e_flx0_Data[val])
+#     wm_ratios.append(wm)
+#     e_wm_ratios.append(e_wm)
 
-# Running NebulaBayse for each Voronoi bin
-snr2_cnd = (NII6584_snr_2D < 3.0)
-zero2_cnd = (zero_cnd | snr2_cnd)
+# # Running NebulaBayse for each Voronoi bin
+# snr2_cnd = (NII6584_snr_2D < 3.0)
+# zero2_cnd = (zero_cnd | snr2_cnd)
 
-for i in np.arange(nvbin):
-    if (np.unique(zero2_cnd[data_vbin == i])[0] == False):
-        print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
-        obs_fluxes, obs_errs = [], []
-        for l in linelist_GEMname:
-            idx_l = linelist_GEMname.index(l)
-            exec("fl = "+l+"_flux_2D[data_vbin == i]")
-            exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
-            fl_input, e_fl_input = np.unique(fl)[0], np.unique(e_fl)[0]
-            if (fl_input <= 0.0):
-                fl0 = np.unique(Halpha_flux_2D[data_vbin == i])[0]
-                e_fl0 = np.unique(e_Halpha_flux_2D[data_vbin == i])[0]
-                fl_input = fl0 * wm_ratios[idx_l]
-                e_fl_input = fl_input * np.sqrt((e_fl0/fl0)**2 + (e_wm_ratios[idx_l]/wm_ratios[idx_l])**2)
-            obs_fluxes.append(fl_input)
-            obs_errs.append(e_fl_input)
+# for i in np.arange(nvbin):
+#     if (np.unique(zero2_cnd[data_vbin == i])[0] == False):
+#         print(f"\n----- Running NebulaBayes for bin {i:d} -----\n")
+#         obs_fluxes, obs_errs = [], []
+#         for l in linelist_GEMname:
+#             idx_l = linelist_GEMname.index(l)
+#             exec("fl = "+l+"_flux_2D[data_vbin == i]")
+#             exec("e_fl = e_"+l+"_flux_2D[data_vbin == i]")
+#             fl_input, e_fl_input = np.unique(fl)[0], np.unique(e_fl)[0]
+#             if (fl_input <= 0.0):
+#                 fl0 = np.unique(Halpha_flux_2D[data_vbin == i])[0]
+#                 e_fl0 = np.unique(e_Halpha_flux_2D[data_vbin == i])[0]
+#                 fl_input = fl0 * wm_ratios[idx_l]
+#                 e_fl_input = fl_input * np.sqrt((e_fl0/fl0)**2 + (e_wm_ratios[idx_l]/wm_ratios[idx_l])**2)
+#             obs_fluxes.append(fl_input)
+#             obs_errs.append(e_fl_input)
 
-        kwargs = {"norm_line": norm_line, "deredden": False,
-                  "obs_wavelengths": wavlist_NBinput, "prior": prior,
-                  # "prior": "Uniform",
-                  "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
-                  "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
-                  "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
-                  "estimate_table": os.path.join(OUT_DIR, f"1_HII_param_estimates_bin{i:d}.csv"),
-                  "best_model_table": os.path.join(OUT_DIR, f"1_HII_best_model_bin{i:d}.csv")
-                  }
+#         kwargs = {"norm_line": norm_line, "deredden": False,
+#                   "obs_wavelengths": wavlist_NBinput, "prior": prior,
+#                   # "prior": "Uniform",
+#                   "prior_plot": os.path.join(OUT_DIR, f"1_HII_prior_plot_bin{i:d}.pdf"),
+#                   "likelihood_plot": os.path.join(OUT_DIR, f"1_HII_likelihood_plot_bin{i:d}.pdf"),
+#                   "posterior_plot": os.path.join(OUT_DIR, f"1_HII_posterior_plot_bin{i:d}.pdf"),
+#                   "estimate_table": os.path.join(OUT_DIR, f"1_HII_param_estimates_bin{i:d}.csv"),
+#                   "best_model_table": os.path.join(OUT_DIR, f"1_HII_best_model_bin{i:d}.csv")
+#                   }
 
-        try:
-            Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
-            Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
-            print("\nParameter estimate table:")
-            print(Estimate_table)
+#         try:
+#             Result_HII = NB_Model_HII(obs_fluxes, obs_errs, linelist_NBinput, **kwargs)
+#             Estimate_table = Result_HII.Posterior.DF_estimates  # pandas DataFrame
+#             print("\nParameter estimate table:")
+#             print(Estimate_table)
 
-            for p in grid_params:
-                est = Estimate_table.loc[p, "Estimate"]
-                low = Estimate_table.loc[p, "CI68_low"]
-                high = Estimate_table.loc[p, "CI68_high"]
-                print("\nThe measured "+p+" = "
-                      "{0:.2f}^{{+{1:.2f}}}_{{-{2:.2f}}}".format(est, *(high-est, est-low)))
+#             for p in grid_params:
+#                 est = Estimate_table.loc[p, "Estimate"]
+#                 low = Estimate_table.loc[p, "CI68_low"]
+#                 high = Estimate_table.loc[p, "CI68_high"]
+#                 print("\nThe measured "+p+" = "
+#                       "{0:.2f}^{{+{1:.2f}}}_{{-{2:.2f}}}".format(est, *(high-est, est-low)))
 
-            best_model_dict = Result_HII.Posterior.best_model
-            print("\nBest model table:")
-            print(best_model_dict["table"])  # pandas DataFrame
+#             best_model_dict = Result_HII.Posterior.best_model
+#             print("\nBest model table:")
+#             print(best_model_dict["table"])  # pandas DataFrame
 
-            NB_logOH_2D[data_vbin == i] = Estimate_table.loc["12 + log O/H", "Estimate"]
-            NB_logU_2D[data_vbin == i] = Estimate_table.loc["log U", "Estimate"]
+#             NB_logOH_2D[data_vbin == i] = Estimate_table.loc["12 + log O/H", "Estimate"]
+#             NB_logU_2D[data_vbin == i] = Estimate_table.loc["log U", "Estimate"]
         
-        except ValueError:
-            # print(ValueError)
-            continue
-    else:
-        print(f"\n----- NebulaBayes is not available for bin {i:d} -----\n")
-        fault_bin.append(i)
+#         except ValueError:
+#             # print(ValueError)
+#             continue
+#     else:
+#         print(f"\n----- NebulaBayes is not available for bin {i:d} -----\n")
+#         fault_bin.append(i)
 
 
-# ----- START: Oxygen abundance map (NebulaBayes, HII) ----- #
-plt_Data = copy.deepcopy(NB_logOH_2D)
-plt_Data[plt_Data == 0] = np.nan
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-plot_2Dmap(plt_Data, r"${\rm 12+log(O/H)}$ map (NebulaBayes, HII)", 8.1, 8.7,
-           dir_fig+"Map_logOH_NBH2", cmap='rainbow')
+# # ----- START: Oxygen abundance map (NebulaBayes, HII) ----- #
+# plt_Data = copy.deepcopy(NB_logOH_2D)
+# plt_Data[plt_Data == 0] = np.nan
+# v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+# plot_2Dmap(plt_Data, r"${\rm 12+log(O/H)}$ map (NebulaBayes, HII)", 8.1, 8.7,
+#            dir_fig+"Map_logOH_NBH2", cmap='rainbow')
 
-# Flux-weighted mean
-val_NB = (np.isnan(plt_Data) == False)
-fwm_logOH3 = weighted_mean(data=plt_Data[val_NB], weights=Halpha_flux_2D[val_NB])
-print(f"Flux-weighted mean of log O/H (NB, HII) : {fwm_logOH3:.3f}")
+# # Flux-weighted mean
+# val_NB = (np.isnan(plt_Data) == False)
+# fwm_logOH3 = weighted_mean(data=plt_Data[val_NB], weights=Halpha_flux_2D[val_NB])
+# print(f"Flux-weighted mean of log O/H (NB, HII) : {fwm_logOH3:.3f}")
 
-# # 1. HST
-# logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
-# print(f"log O/H (HST, O3N2 method) : disk - {logOH2_disk_hst:.3f}, tail - {logOH2_tail_hst:.3f}")
+# # # 1. HST
+# # logOH2_disk_hst, logOH2_tail_hst = cal_fwm_logOH("HST_boundary_1sig_transformed.reg", logOH2)
+# # print(f"log O/H (HST, O3N2 method) : disk - {logOH2_disk_hst:.3f}, tail - {logOH2_tail_hst:.3f}")
 
-# 2. Gemini
-logOH3_disk_gem, logOH3_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", plt_Data)
-print(f"log O/H (Gemini, NB, HII) : disk - {logOH3_disk_gem:.3f}, tail - {logOH3_tail_gem:.3f}")
-# ----- END: Oxygen abundance map (NebulaBayes, HII) ----- #
-
-
-# ----- START: Ionization parameter map ----- #
-plt_Data = copy.deepcopy(NB_logU_2D)
-plt_Data[plt_Data == 0] = np.nan
-plt_Data += np.log10(c*1.0e+5)
-v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
-plot_2Dmap(plt_Data, r"${\rm log(q)}$ map (NebulaBayes, HII)", 6.8, 7.5,
-           dir_fig+"Map_logQ_NBH2", cmap='rainbow')
-# ----- END: Ionization parameter map ----- #
+# # 2. Gemini
+# logOH3_disk_gem, logOH3_tail_gem = cal_fwm_logOH("GMOS_boundary_1sig.reg", plt_Data)
+# print(f"log O/H (Gemini, NB, HII) : disk - {logOH3_disk_gem:.3f}, tail - {logOH3_tail_gem:.3f}")
+# # ----- END: Oxygen abundance map (NebulaBayes, HII) ----- #
 
 
-# ----- Saving the results ----- #
-np.savez('plot_data2.npz', logOH_1=NB_logOH_2D, logU_1=NB_logU_2D)
-df_res2 = pd.Series(data = {"N2_total": fwm_logOH,
-                            "N2_disk": logOH_disk_gem,
-                            "N2_tail": logOH_tail_gem,
-                            "O3N2_total": fwm_logOH2,
-                            "O3N2_disk": logOH2_disk_gem,
-                            "O3N2_tail": logOH2_tail_gem,
-                            "NBH2_total": fwm_logOH3,
-                            "NBH2_disk": logOH3_disk_gem,
-                            "NBH2_tail": logOH3_tail_gem})
-'''
+# # ----- START: Ionization parameter map ----- #
+# plt_Data = copy.deepcopy(NB_logU_2D)
+# plt_Data[plt_Data == 0] = np.nan
+# plt_Data += np.log10(c*1.0e+5)
+# v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
+# plot_2Dmap(plt_Data, r"${\rm log(q)}$ map (NebulaBayes, HII)", 6.8, 7.5,
+#            dir_fig+"Map_logQ_NBH2", cmap='rainbow')
+# # ----- END: Ionization parameter map ----- #
+
+
+# # ----- Saving the results ----- #
+# np.savez('plot_data2.npz', logOH_1=NB_logOH_2D, logU_1=NB_logU_2D)
+# df_res2 = pd.Series(data = {"N2_total": fwm_logOH,
+#                             "N2_disk": logOH_disk_gem,
+#                             "N2_tail": logOH_tail_gem,
+#                             "O3N2_total": fwm_logOH2,
+#                             "O3N2_disk": logOH2_disk_gem,
+#                             "O3N2_tail": logOH2_tail_gem,
+#                             "NBH2_total": fwm_logOH3,
+#                             "NBH2_disk": logOH3_disk_gem,
+#                             "NBH2_tail": logOH3_tail_gem})
+# '''
 
 # Printing the running time
 print('--- %.4f seconds ---' %(time.time()-start_time))
