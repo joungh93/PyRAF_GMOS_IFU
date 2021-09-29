@@ -247,7 +247,7 @@ for l in np.arange(len(emi_lines)):
     exec(emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("e_"+emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("plt_Data = "+emi_lines[l]+"_flux_2D")
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
                dir_fig+"Map_flux_"+emi_lines[l],
                cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]', **pltFlags)
@@ -258,7 +258,7 @@ for l in np.arange(len(emi_lines)):
 for l in np.arange(len(emi_lines)):
     exec("plt_Data = "+emi_lines[l]+"_snrpix_2D")
     plt_Data[zero_cnd] = 0.
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
 
     plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
                dir_fig+"Map_snr_"+emi_lines[l],
