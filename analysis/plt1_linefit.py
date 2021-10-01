@@ -247,7 +247,7 @@ for l in np.arange(len(emi_lines)):
     exec(emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("e_"+emi_lines[l]+"_flux_2D[zero2_cnd] = 0.")
     exec("plt_Data = "+emi_lines[l]+"_flux_2D")
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
     plot_2Dmap(plt_Data, name_elines[l]+" flux map", v_low, v_high,
                dir_fig+"Map_flux_"+emi_lines[l],
                cb_label=r'Flux [${\rm 10^{-15}~erg~s^{-1}~cm^{-2}~\AA^{-1}}$]', **pltFlags)
@@ -258,7 +258,7 @@ for l in np.arange(len(emi_lines)):
 for l in np.arange(len(emi_lines)):
     exec("plt_Data = "+emi_lines[l]+"_snrpix_2D")
     plt_Data[zero_cnd] = 0.
-    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [1.0, 99.0])
+    v_low, v_high = np.percentile(plt_Data[plt_Data > 0.], [10.0, 90.0])
 
     plot_2Dmap(plt_Data, name_elines[l]+" S/N map (per pixel)", 0., v_high,
                dir_fig+"Map_snr_"+emi_lines[l],
@@ -282,6 +282,7 @@ plot_2Dmap(plt_Data, "Radial velocity map", v_low-25.0, v_high+25.0,
 
 
 # ----- START: Velocity dispersion map ----- #
+print("\n--- Gas velocity dispersion ---")
 emi_lines2 = ["Halpha", "Hbeta", "OII3727", "OIII5007", "SII6717"]
 name_elines2 = [r"${\rm H\alpha}$", r"${\rm H\beta}$",
                 r"${\rm [OII]\lambda\lambda3727,3729}$", r"${\rm [OIII]\lambda5007}$",
@@ -319,6 +320,7 @@ for i, l in enumerate(emi_lines2):
 
 
 # ----- START: H alpha / H beta flux ratio map ----- #
+print("\n--- H alpha / H beta flux ratio ---")
 plt_Data, e_plt_Data = get_line_ratio(Halpha_flux_2D, Hbeta_flux_2D, Halpha_snr_2D, Hbeta_snr_2D,
                                       e_Halpha_flux_2D, e_Hbeta_flux_2D)
 v_low, v_high = np.percentile(plt_Data[np.isnan(plt_Data) == False], [1.0, 99.0])
@@ -338,40 +340,64 @@ plot_2Dmap(plt_Data/e_plt_Data, r"${\rm H\alpha/H\beta}$ flux ratio S/N map", 0.
 
 
 # ----- START: SFR (H alpha) map ----- #
-def compute_SFR(Ha_flux, Hab_ratio, luminosity_distance,
-                e_Ha_flux=0.0, e_Hab_ratio=0.0, EBV_gal=0.0, apply_C00=True):
+print("\n--- Star formation rate ---")
+def compute_SFR(SF_flux, Hab_ratio, luminosity_distance,
+                e_SF_flux=0.0, e_Hab_ratio=0.0, EBV_gal=0.0,
+                apply_C00=True, apply_Ha=True):
     '''
     luminosity_distance: [in pc]
     '''
 
     # Please refer to test_dustlaws.ipynb.
     if apply_C00:
-        k_Ha, k_Hb, k_V = 3.3248, 4.5965, 4.0522
+        k_Ha, k_Hb, k_V, k_O2 = 3.3248, 4.5965, 4.0522, 5.8559
     else:  # Cardelli+89 extinction law
-        k_Ha, k_Hb, k_V = 2.5342, 3.6076, 3.1000
+        k_Ha, k_Hb, k_V, k_O2 = 2.5342, 3.6076, 3.1000, 4.7703
 
     EBV_int = (-2.5 / (k_Ha-k_Hb)) * np.log10(Hab_ratio / 2.86)
     EBV = EBV_int + EBV_gal
-    A_Ha = k_Ha * EBV
-    e_A_Ha = k_Ha * (-2.5 / (k_Ha-k_Hb)) * e_Hab_ratio/(Hab_ratio*np.log(10.0))
-    A_V = (k_V / k_Ha) * A_Ha
 
-    L_Ha = 1.0e-15 * Ha_flux * 10.0**(0.4*A_Ha) * (4.0*np.pi*(luminosity_distance*3.086e+18)**2.0)
-    e_L_Ha = L_Ha * np.sqrt((e_Ha_flux/Ha_flux)**2. + (e_A_Ha/A_Ha)**2.)
+    if apply_Ha:
+        k_lam = k_Ha
+        SF_fac = 4.6e-42
+    else:  # using [OII]3727,3729
+        k_lam = k_O2
+        SF_fac = 1.4e-41 / 1.717  # ???
 
-    SFR = L_Ha * 4.6e-42
-    e_SFR = e_L_Ha * 4.6e-42
+    A_lam = k_lam * EBV
+    e_A_lam = k_lam * (-2.5 / (k_Ha-k_Hb)) * e_Hab_ratio/(Hab_ratio*np.log(10.0))
+
+    A_V = k_V * EBV_int  # Internal V-mag extinction
+    e_A_V = k_V * (-2.5 / (k_Ha-k_Hb)) * e_Hab_ratio/(Hab_ratio*np.log(10.0))
+
+    L_lam = 1.0e-15 * SF_flux * 10.0**(0.4*A_lam) * (4.0*np.pi*(luminosity_distance*3.086e+18)**2.0)
+    e_L_lam = L_lam * np.sqrt((e_SF_flux/SF_flux)**2. + (e_A_lam/A_lam)**2.)
+
+    SFR = L_lam * SF_fac
+    e_SFR = e_L_lam * SF_fac
     e_SFR[SFR == 0.] = 0.
 
-    return [SFR, e_SFR, A_V]
+    # A_Ha = k_Ha * EBV
+    # e_A_Ha = k_Ha * (-2.5 / (k_Ha-k_Hb)) * e_Hab_ratio/(Hab_ratio*np.log(10.0))
+    # A_V = (k_V / k_Ha) * A_Ha
+
+    # L_Ha = 1.0e-15 * SF_flux * 10.0**(0.4*A_Ha) * (4.0*np.pi*(luminosity_distance*3.086e+18)**2.0)
+    # e_L_Ha = L_Ha * np.sqrt((e_SF_flux/SF_flux)**2. + (e_A_Ha/A_Ha)**2.)
+
+    # SFR = L_Ha * 4.6e-42
+    # e_SFR = e_L_Ha * 4.6e-42
+    # e_SFR[SFR == 0.] = 0.
+
+    return [SFR, e_SFR, A_V, e_A_V]
 
 Hab = np.ones_like(plt_Data) * fwm_Hab    # Assumption (to be revised later)
 EBV_gal = 0.012
-SFR, e_SFR, A_V = compute_SFR(Halpha_flux_2D, Hab, dist_lum, 
-                              e_Halpha_flux_2D, e_fwm_Hab, EBV_gal=EBV_gal, apply_C00=False)
+SFR, e_SFR, A_V, e_A_V = compute_SFR(Halpha_flux_2D, Hab, dist_lum, 
+                                     e_Halpha_flux_2D, e_fwm_Hab,
+                                     EBV_gal=EBV_gal, apply_C00=False, apply_Ha=True)
 val_SFR = (SFR > 0.)
-print(f"SFR sum : {np.sum(SFR[val_SFR]):.2f} +/- {np.sqrt(np.sum(e_SFR[val_SFR]**2)):.2f} Mo/yr")
-print(f"Mean V-magnitude extinction : {np.mean(A_V[val_SFR]):.3f} mag")
+print(f"SFR sum (Halpha, Ha/Hb): {np.sum(SFR[val_SFR]):.2f} +/- {np.sqrt(np.sum(e_SFR[val_SFR]**2)):.2f} Mo/yr")
+print(f"Mean V-magnitude extinction : {np.mean(A_V[val_SFR]):.3f} +/- {np.sqrt(np.sum(e_A_V[val_SFR]**2))/np.sum(val_SFR):.3f} mag")
 
 plt_Data = SFR / (pixel_scale*ang_scale)**2.
 SFRD = plt_Data
@@ -380,6 +406,22 @@ v_low, v_high = np.percentile(plt_Data, [1.0, 99.0])
 plot_2Dmap(plt_Data, "SFR map", v_low, v_high,
            dir_fig+"Map_SFR_Halpha", cmap='gray_r',
            cb_label=r"SFR density [$M_{\odot}~{\rm yr^{-1}~kpc^{-2}}$]", **pltFlags)
+
+# Calculating various SFRs
+SFR_set = ["Halpha, A_V = 0.5 mag", "Halpha, A_V = 0.74 mag", #"Halpha, GASP disk+tail",
+           "[OII], A_V = 0.5 mag", "[OII], A_V = 0.74 mag"]#, "Halpha, GASP disk+tail"]
+flx_set = [Halpha_flux_2D, Halpha_flux_2D, OII3727_flux_2D, OII3727_flux_2D]
+e_flx_set = [e_Halpha_flux_2D, e_Halpha_flux_2D, e_OII3727_flux_2D, e_OII3727_flux_2D]
+Hab_set = [np.ones_like(plt_Data) * 3.355, np.ones_like(plt_Data) * 3.633,
+           np.ones_like(plt_Data) * 3.355, np.ones_like(plt_Data) * 3.633]
+for i in np.arange(len(SFR_set)):
+
+    SFRi, e_SFRi, A_Vi, e_A_Vi = compute_SFR(flx_set[i], Hab_set[i], dist_lum, 
+                                           e_flx_set[i], np.ones_like(plt_Data) * 0.252,
+                                           EBV_gal=EBV_gal, apply_C00=False, apply_Ha=True)
+    val_SFRi = (SFRi > 0.)
+    print("SFR sum ("+SFR_set[i]+f"): {np.sum(SFRi[val_SFRi]):.2f} +/- {np.sqrt(np.sum(e_SFRi[val_SFRi]**2)):.2f} Mo/yr")
+    print(f"Mean V-magnitude extinction : {np.mean(A_Vi[val_SFRi]):.3f} +/- {np.sqrt(np.sum(e_A_Vi[val_SFRi]**2))/np.sum(val_SFR):.3f} mag")
 # ----- END: SFR (H alpha) map ----- #
 
 
@@ -423,6 +465,7 @@ plot_2Dmap(plt_Data/e_plt_Data, r"${\rm [NII]\lambda 6584/H\alpha}$ flux ratio S
 
 
 # ----- START: Oxygen abundance map (N2 method) ----- #
+print("\n--- Gas metallicity ---")
 N2 = np.log10(plt_Data)
 logOH = 8.743 + 0.462*N2
 v_low, v_high = np.percentile(logOH[np.isnan(logOH) == False], [1.0, 99.0])
@@ -537,6 +580,7 @@ plot_2Dmap(plt_Data, r"${\rm [NII]\lambda 6584/[NII]\lambda 6548}$ flux ratio ma
 
 
 # ----- Saving the results ----- #
+print("\n")
 np.savez('plot_data.npz', sflx=sflx, rvd=Rvd, vdd=Vdd, sfrd=SFRD)
 df_res1 = pd.Series(data = {"FW-mean vdisp": fwm_vdisp,
                             "FW-mean Hab": fwm_Hab,
