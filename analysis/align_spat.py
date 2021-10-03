@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Feb 27 15:18:20 2020
-
 @author: jlee
 """
 
@@ -62,11 +61,11 @@ offset_X, offset_Y = np.loadtxt(ic.dir_cmb+"offset.txt").T
 for j in trange(d_sci_cut.shape[0]):
 	for k in np.arange(len(ic.cube_name)):
 		ds, hs = fits.getdata(ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", header=True)
-		ds_shifted = ndimage.shift(ds, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
+		ds_shifted = ndimage.shift(ds, shift=(offset_Y[k], offset_X[k]), mode='nearest')
 		fits.writeto("al1_"+ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", ds_shifted, hs, overwrite=True)
 
 		dv, hv = fits.getdata(ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", header=True)
-		dv_shifted = ndimage.shift(dv, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
+		dv_shifted = ndimage.shift(dv, shift=(offset_Y[k], offset_X[k]), mode='nearest')
 		fits.writeto("al1_"+ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", dv_shifted, hv, overwrite=True)
 
 os.chdir(working_dir)	
@@ -86,7 +85,7 @@ for i in np.arange(len(ic.cube_list)):
 	d_var, h_var = fits.getdata(ic.cube_list[i], ext=2, header=True)
 
 	assert (p['cb'][i] == ic.cube_name[i])
-	count_max = p['val'][i]
+	count_max = p['val'].max()
 	d_sci[d_sci > count_max] = 0.0
 	
 	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
