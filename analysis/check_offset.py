@@ -20,13 +20,14 @@ from scipy import ndimage
 current_dir = os.getcwd()
 working_dir = ic.dir_cmb
 os.chdir(working_dir)
-Ha_list = sorted(glob.glob("Ha_sum-*.fits"))
+# Ha_list = sorted(glob.glob("Ha_sum-*.fits"))
 
 
 # ----- Calculating WCS offsets ----- #
 
 # WCS reference
-h01 = fits.getheader(ic.cube_list[0], ext=0)
+idx_ref = np.where([ic.cube_ref in cb for cb in ic.cube_list])[0][0]
+h01 = fits.getheader(ic.cube_list[idx_ref], ext=0)
 PA = h01['PA']*np.pi/180.
 
 # Writing WCS offset file
@@ -50,11 +51,11 @@ f.close()
 
 # Running an initial shift task
 offset_X, offset_Y = np.loadtxt('offset.txt').T
-dhs0 = fits.getdata(Ha_list[0], ext=0, header=False)
+dhs0 = fits.getdata(sorted(glob.glob("Ha_sum-*.fits"))[0], ext=0, header=False)
 dhs2 = np.zeros((len(ic.cube_list), dhs0.shape[0], dhs0.shape[1]))
 for i in np.arange(len(ic.cube_list)):
-	dhs, hdr = fits.getdata(Ha_list[i], ext=0, header=True)
-	dhs_shifted = ndimage.shift(dhs, shift=(-offset_Y[i], -offset_X[i]), mode='nearest')
+	dhs, hdr = fits.getdata("Ha_sum-"+ic.cube_name[i]+".fits", ext=0, header=True)
+	dhs_shifted = ndimage.shift(dhs, shift=(offset_Y[i], offset_X[i]), mode='nearest')
 	fits.writeto('al1_Ha_sum-'+ic.cube_name[i]+'.fits', dhs_shifted, hdr, overwrite=True)
 	dhs2[i,:,:] = dhs_shifted
 
