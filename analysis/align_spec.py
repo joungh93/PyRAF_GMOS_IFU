@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Feb 28 23:01:15 2020
-
 @author: jlee
 """
 
@@ -44,7 +43,7 @@ for i in np.arange(len(ic.cube_list)):
                       num=h_sci['NAXIS3'], endpoint=True)
 
 	assert (p['cb'][i] == ic.cube_name[i])
-	count_max = p['val'][i]
+	count_max = p['val'].max()
 	d_sci[d_sci > count_max] = 0.0
 
 	d_scin = np.zeros((1+int((wav_end-wav_start)/ic.wav_intv), np.shape(d_sci)[1], np.shape(d_sci)[2]))
