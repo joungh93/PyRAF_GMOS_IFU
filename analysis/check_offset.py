@@ -38,8 +38,8 @@ for i in np.arange(len(ic.cube_list)):
 	offset_RA = (h['CRVAL1']-h01['CRVAL1'])*np.cos(h01['CRVAL2'])*3600.0    # arcsec
 	offset_Dec = (h['CRVAL2']-h01['CRVAL2'])*3600.0    # arcsec
 
-	offset_X = (-offset_RA*np.cos(PA) + offset_Dec*np.sin(PA)) / ic.pixel_scale    # pixel
-	offset_Y = (offset_RA*np.sin(PA) + offset_Dec*np.cos(PA)) / ic.pixel_scale    # pixel
+	offset_X = (offset_RA*np.cos(PA) + offset_Dec*np.sin(PA)) / ic.pixel_scale    # pixel
+	offset_Y = (-offset_RA*np.sin(PA) + offset_Dec*np.cos(PA)) / ic.pixel_scale    # pixel
 
 	print(ic.cube_name[i]+f" - RA offset: {offset_RA:.3f}, Dec offset: {offset_Dec:.3f}")
 	print(f"                 X offset: {offset_X:.3f} pix, Y offset: {offset_Y:.3f}")
@@ -55,7 +55,7 @@ dhs0 = fits.getdata(sorted(glob.glob("Ha_sum-*.fits"))[0], ext=0, header=False)
 dhs2 = np.zeros((len(ic.cube_list), dhs0.shape[0], dhs0.shape[1]))
 for i in np.arange(len(ic.cube_list)):
 	dhs, hdr = fits.getdata("Ha_sum-"+ic.cube_name[i]+".fits", ext=0, header=True)
-	dhs_shifted = ndimage.shift(dhs, shift=(offset_Y[i], offset_X[i]), mode='nearest')
+	dhs_shifted = ndimage.shift(dhs, shift=(-offset_Y[i], -offset_X[i]), mode='nearest')
 	fits.writeto('al1_Ha_sum-'+ic.cube_name[i]+'.fits', dhs_shifted, hdr, overwrite=True)
 	dhs2[i,:,:] = dhs_shifted
 
