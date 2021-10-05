@@ -13,6 +13,8 @@ import glob, os
 import copy
 import sys
 from astropy.io import fits
+from astropy.convolution import Gaussian2DKernel
+from astropy.convolution import convolve
 from scipy import ndimage
 from tqdm import trange
 import init_cfg as ic
@@ -28,6 +30,10 @@ os.system('mkdir '+split_dir)
 
 
 # ----- Making the split 2D images for spatial alignment ----- #
+kernel = Gaussian2DKernel(2)
+p = np.genfromtxt(current_dir+"/count_max.txt", dtype=None, encoding=None, 
+	              names=("cb","val"))
+count_max = p['val'].max()
 
 # Making the split images
 for i in np.arange(len(ic.cube_list)):
@@ -46,11 +52,21 @@ for i in np.arange(len(ic.cube_list)):
 	d_sci_cut = d_sci[spx_start:spx_end,:,:]
 	d_var_cut = d_var[spx_start:spx_end,:,:]
 
+	assert (p['cb'][i] == ic.cube_name[i])
+
 	os.chdir(split_dir)
 	print('Working on '+ic.cube_name[i])
 	for j in trange(np.shape(d_sci_cut)[0]):
-		fits.writeto(ic.cube_name[i]+f"_SCI_{j+1:04d}.fits", d_sci_cut[j,:,:], h_sci, overwrite=True)
-		fits.writeto(ic.cube_name[i]+f"_VAR_{j+1:04d}.fits", d_var_cut[j,:,:], h_var, overwrite=True)
+		d_sci_cut2 = d_sci_cut[j,:,:]
+		d_var_cut2 = d_var_cut[j,:,:]
+
+		d_sci_cut2[d_sci_cut2 > count_max] = np.nan
+		d_sci_cut2[d_sci_cut2 < -count_max] = 0.0
+		conv = convolve(d_sci_cut2, kernel)
+		d_sci_cut2[np.isnan(d_sci_cut2)] = conv[np.isnan(d_sci_cut2)]
+
+		fits.writeto(ic.cube_name[i]+f"_SCI_{j+1:04d}.fits", d_sci_cut2, h_sci, overwrite=True)
+		fits.writeto(ic.cube_name[i]+f"_VAR_{j+1:04d}.fits", d_var_cut2, h_var, overwrite=True)
 	os.chdir(working_dir)
 print('----- Split images were created. -----\n')
 
@@ -61,11 +77,11 @@ offset_X, offset_Y = np.loadtxt(ic.dir_cmb+"offset.txt").T
 for j in trange(d_sci_cut.shape[0]):
 	for k in np.arange(len(ic.cube_name)):
 		ds, hs = fits.getdata(ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", header=True)
-		ds_shifted = ndimage.shift(ds, shift=(offset_Y[k], offset_X[k]), mode='nearest')
+		ds_shifted = ndimage.shift(ds, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
 		fits.writeto("al1_"+ic.cube_name[k]+f"_SCI_{j+1:04d}.fits", ds_shifted, hs, overwrite=True)
 
 		dv, hv = fits.getdata(ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", header=True)
-		dv_shifted = ndimage.shift(dv, shift=(offset_Y[k], offset_X[k]), mode='nearest')
+		dv_shifted = ndimage.shift(dv, shift=(-offset_Y[k], -offset_X[k]), mode='nearest')
 		fits.writeto("al1_"+ic.cube_name[k]+f"_VAR_{j+1:04d}.fits", dv_shifted, hv, overwrite=True)
 
 os.chdir(working_dir)	
@@ -76,17 +92,14 @@ print('----- Shift images were created. -----\n')
 os.system("rm -rfv "+working_dir+"cube1")
 os.system("mkdir "+working_dir+"cube1")
 
-p = np.genfromtxt(current_dir+"/count_max.txt", dtype=None, encoding=None, 
-	              names=("cb","val"))
-
 for i in np.arange(len(ic.cube_list)):
 	hd0 = fits.getheader(ic.cube_list[i], ext=0)
 	d_sci, h_sci = fits.getdata(ic.cube_list[i], ext=1, header=True)
 	d_var, h_var = fits.getdata(ic.cube_list[i], ext=2, header=True)
 
-	assert (p['cb'][i] == ic.cube_name[i])
-	count_max = p['val'].max()
-	d_sci[d_sci > count_max] = 0.0
+	# assert (p['cb'][i] == ic.cube_name[i])
+	# count_max = p['val'].max()
+	# d_sci[d_sci > count_max] = 0.0
 	
 	wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
