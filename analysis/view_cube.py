@@ -35,7 +35,7 @@ for i in np.arange(len(ic.cube_list)):
 
     wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
                       stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
-                      num=h_sci['NAXIS3'], endpoint=True)    
+                      num=h_sci['NAXIS3'], endpoint=True)
     check_Ha = [np.abs(wav-wav_range_obs[0]).argmin(),
                 np.abs(wav-wav_range_obs[1]).argmin()+1]
 
