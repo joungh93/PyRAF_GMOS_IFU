@@ -52,7 +52,7 @@ d_var, h_var = fits.getdata(fin_cb, ext=2, header=True)
 wav = np.linspace(start=h_sci['CRVAL3']+(1-h_sci['CRPIX3'])*h_sci['CD3_3'],
                   stop=h_sci['CRVAL3']+(h_sci['NAXIS3']-h_sci['CRPIX3'])*h_sci['CD3_3'],
                   num=h_sci['NAXIS3'], endpoint=True)
-
+wav_obs = wav
 wav_rest = wav/(1.0+redshift)
 # d_sci *= (1.0+redshift)
 # d_var *= (1.0+redshift)**2.0
@@ -82,7 +82,7 @@ x, y, sig, noi = np.loadtxt(dir_vbin0+'vorbin_input2.txt').T
 
 
 # Voronoi 2D binning
-targetSN = 50.0
+targetSN = 30.0
 
 fig, ax = plt.subplots()
 binNum, xNode, yNode, xBar, yBar, sn, nPixels, scale = voronoi_2d_binning(
@@ -111,23 +111,17 @@ for i in np.arange(nvbin):
 bin_order = sn.argsort()[::-1]
 
 
-# Wavelength masking range
-wav_frame_mode = 'obs'    # 'obs' / 'res'
-wav_msk2 = np.array([[4990, 5015],  # [OII]
-                    [5170, 5200],   # [NeIII]
-                    [5430, 5560],   # H delta
-                    [5750, 5875],   # H gamma
-                    [6000, 6320],   # noisy? region
-                    [6450, 6580],   # H beta
-                    [6630, 6780],    # [OIII]4959/5007
-                    [6900, 7300],   # noisy? region
-                    [8700, 8900],   # [NII] + H alpha
-                    [9000, 9075]    # [SII]
-                    ])
-if (wav_frame_mode == 'res'):
-    wav_msk2 = wav_msk2*(1.0+redshift)
-else:
-    pass
+# ----- Continuum fitting ----- #
+cont_width = 20  # AA
+kernel_width = 10  # AA
+sig1, sig2 = 3.0, 4.0  # For sigma clipping
+
+# Wavelength masking range (copied from contfit_init.ipynb)
+wav_msk = np.array([[4950, 4970],  # [OII]3727/3729
+                    [6455, 6480],  # H beta
+                    [6580, 6605],  # [OIII]4959
+                    [6650, 6670],  # [OIII]5007
+                    [8700, 8975]])  # H alpha + [NII]6548/84 + [SII]6717/31
 
 binned_cont = np.zeros_like(binned_spec)
 for i in trange(nvbin):
@@ -138,20 +132,60 @@ for i in trange(nvbin):
                   '-', color='dodgerblue', linewidth=2.0, alpha=0.5, zorder=1,
                   label='Binned spectrum')
 
-    # Continuum fitting: polymial relation
-    region = [(wav.min()*u.AA, wav_msk2[0,0]*u.AA)]
-    for j in np.arange(wav_msk2.shape[0]-1):
-        region.append((wav_msk2[j,1]*u.AA, wav_msk2[j+1,0]*u.AA))
-    region.append((wav_msk2[wav_msk2.shape[0]-1, 1]*u.AA, wav.max()*u.AA))
-    # print(region)
+    # # Continuum fitting: polymial relation
+    # region = [(wav.min()*u.AA, wav_msk2[0,0]*u.AA)]
+    # for j in np.arange(wav_msk2.shape[0]-1):
+    #     region.append((wav_msk2[j,1]*u.AA, wav_msk2[j+1,0]*u.AA))
+    # region.append((wav_msk2[wav_msk2.shape[0]-1, 1]*u.AA, wav.max()*u.AA))
+    # region = [(3450.*(1.0+redshift)*u.AA, 3700.*(1.0+redshift)*u.AA), (3750.*(1.0+redshift)*u.AA, 3800.*(1.0+redshift)*u.AA),
+    #           (4100.*(1.0+redshift)*u.AA, 4500.*(1.0+redshift)*u.AA), (4775.*(1.0+redshift)*u.AA, 4835.*(1.0+redshift)*u.AA),
+    #           (4865.*(1.0+redshift)*u.AA, 4935.*(1.0+redshift)*u.AA), (5010.*(1.0+redshift)*u.AA, 5040.*(1.0+redshift)*u.AA),
+    #           (5160.*(1.0+redshift)*u.AA, 5240.*(1.0+redshift)*u.AA), (5600.*(1.0+redshift)*u.AA, 5750.*(1.0+redshift)*u.AA),
+    #           (6170.*(1.0+redshift)*u.AA, 6500.*(1.0+redshift)*u.AA), (6590.*(1.0+redshift)*u.AA, 6675.*(1.0+redshift)*u.AA),
+    #           (6930.*(1.0+redshift)*u.AA, 6980.*(1.0+redshift)*u.AA)]
+    # # print(region)
 
-    lam = wav * u.AA
-    flx = binned_spec[:, bin_order[i]]/nPixels[bin_order[i]] * u.Unit("1.0e-15 erg cm-2 s-1 AA-1")
-    vspec = Spectrum1D(spectral_axis = lam, flux = flx)
-    cfunc = fit_continuum(vspec, model=Chebyshev1D(10), window=region)
-    ccont = cfunc(vspec.spectral_axis)
-    p4, = ax.plot(wav, ccont.value, '-', color='red', linewidth=1.5, alpha=0.7, zorder=5,
-                  label='Chebyshev continuum')
+    # lam = wav * u.AA
+    # flx = binned_spec[:, bin_order[i]]/nPixels[bin_order[i]] * u.Unit("1.0e-15 erg cm-2 s-1 AA-1")
+    # vspec = Spectrum1D(spectral_axis = lam, flux = flx)
+    # cfunc = fit_continuum(vspec, model=Chebyshev1D(10), window=region)
+    # ccont = cfunc(vspec.spectral_axis)
+    # p4, = ax.plot(wav, ccont.value, '-', color='red', linewidth=1.5, alpha=0.7, zorder=5,
+    #               label='Chebyshev continuum')
+
+
+    # Interpolation
+    spec_int = copy.deepcopy(binned_spec[:, bin_order[i]]/nPixels[bin_order[i]])
+    for j in np.arange(wav_msk.shape[0]):
+        spx_l = np.abs(wav_obs - wav_msk[j,0]).argmin()
+        spx_r = np.abs(wav_obs - wav_msk[j,1]).argmin()
+
+        c_l, lo_l, up_l = sigmaclip(spec_int[spx_l-round(cont_width/ic.wav_intv):spx_l], sig1, sig1)  # 20 AA
+        c_r, lo_r, up_r = sigmaclip(spec_int[spx_r+1:spx_r+1+round(cont_width/ic.wav_intv)], sig1, sig1)  # 20 AA
+
+        cont_l = c_l.mean()
+        cont_r = c_r.mean()
+        
+    #     spec_int[spx_l:spx_r+1] = 0.5*(cont_l + cont_r)
+        spec_int[spx_l:spx_r+1] = cont_l + \
+        ((cont_r-cont_l)/(wav_obs[spx_r]-wav_obs[spx_l]))*(wav_obs[spx_l:spx_r+1]-wav_obs[spx_l])
+
+
+    # Sigma clipping
+    clipped, lower, upper = sigmaclip(spec_int, sig2, sig2)
+    spec_int_clipped = copy.deepcopy(spec_int)
+    spec_int_clipped[spec_int < lower] = clipped.mean()
+    spec_int_clipped[spec_int > upper] = clipped.mean()
+
+
+    # Smoothing spectra
+    g = Gaussian1DKernel(stddev = round(kernel_width/ic.wav_intv))  # 10 AA
+    spec_filt = convolve(spec_int_clipped, g)  # spec_int OR spec_int_clipped
+
+
+    # Plotting
+    p4, = ax.plot(wav_obs, spec_filt, '-', color='red', linewidth=1.5, alpha=0.7, zorder=5,
+                  label='Smoothed continuum')
 
     plt.legend(handles=[p1, p4], fontsize=9.0, loc='upper left',
                handlelength=2.5, frameon=True, borderpad=0.8)
@@ -159,7 +193,10 @@ for i in trange(nvbin):
     plt.savefig(dir_vbin+f'vbin_{bin_order[i]:03d}.png', dpi=300)
     plt.close()
 
-    binned_cont[:, bin_order[i]] = ccont.value * nPixels[bin_order[i]]
+    # Saving the continuum
+    binned_cont[:, bin_order[i]] = spec_filt * nPixels[bin_order[i]]
+
+    # binned_cont[:, bin_order[i]] = ccont.value * nPixels[bin_order[i]]
 
 
 # Saving the results
@@ -176,4 +213,4 @@ np.savez(dir_vbin+'vorbin_array.npz', wav=wav, sci=binned_spec, var=binned_vari,
 
 
 # Printing the running time
-print('--- %s seconds ---' %(time.time()-start_time))
+print('--- %.4f seconds ---' %(time.time()-start_time))
