@@ -18,6 +18,8 @@ from astropy.convolution import convolve
 from scipy import ndimage
 from tqdm import trange
 import init_cfg as ic
+import warnings
+warnings.filterwarnings("error")
 
 
 # ----- Directories ----- #
@@ -62,8 +64,16 @@ for i in np.arange(len(ic.cube_list)):
 
 		d_sci_cut2[d_sci_cut2 > count_max] = np.nan
 		d_sci_cut2[d_sci_cut2 < -count_max] = 0.0
-		conv = convolve(d_sci_cut2, kernel)
-		d_sci_cut2[np.isnan(d_sci_cut2)] = conv[np.isnan(d_sci_cut2)]
+
+		try:
+			conv = convolve(d_sci_cut2, kernel)
+			d_sci_cut2[np.isnan(d_sci_cut2)] = conv[np.isnan(d_sci_cut2)]
+		except:
+			try:
+				conv2 = convolve(d_sci_cut2, Gaussian2DKernel(4))
+				d_sci_cut2[np.isnan(d_sci_cut2)] = conv2[np.isnan(d_sci_cut2)]
+			except:
+				d_sci_cut2[np.isnan(d_sci_cut2)] = 0.5*(count_max + np.nanmedian(d_sci_cut2))
 
 		fits.writeto(ic.cube_name[i]+f"_SCI_{j+1:04d}.fits", d_sci_cut2, h_sci, overwrite=True)
 		fits.writeto(ic.cube_name[i]+f"_VAR_{j+1:04d}.fits", d_var_cut2, h_var, overwrite=True)
