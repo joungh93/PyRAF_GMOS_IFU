@@ -43,6 +43,7 @@ for i in np.arange(len(ic.cube_list)):
 
 	print(ic.cube_name[i]+f" - RA offset: {offset_RA:.3f}, Dec offset: {offset_Dec:.3f}")
 	print(f"                 X offset: {offset_X:.3f} pix, Y offset: {offset_Y:.3f}")
+	print(f"                 Reference pixel ({h['CRPIX1']:.3f}, {h['CRPIX2']:.3f}) \n")
 	f.write(f"{offset_X:.3f}  {offset_Y:.3f} \n")
 f.close()
 
