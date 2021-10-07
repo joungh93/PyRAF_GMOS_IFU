@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct 29 16:53:20 2019
-
 @author: jlee
 """
 
@@ -17,7 +16,7 @@ from astropy.io import fits
 # Basic directories
 cpath = os.path.abspath(".")+"/"
 dir_root = os.path.abspath("../")+"/"    # Same as 'dir_iraf'
-dir_redux = dir_root+"redux/"
+dir_redux = dir_root+"redux5/"
 dir_wav = sorted(glob.glob(dir_redux+"w*"))
 
 # Figure directory
@@ -38,16 +37,19 @@ for i in centwave:
 	cube_list += sorted(glob.glob(dir_redux+"w"+i+"0/*/*_3D.fits"))
 for i in np.arange(len(cube_list)):
 	cube_name.append(cube_list[i].split('/')[-1].split('cstxeqxbrg')[-1].split('_3D.fits')[0])
-cube_spa_off = []    # Cubes with spatial offset
-cube_ref = ''    # Reference cube
+cube_spa_off = ['N20190611S0265', 'N20190612S0125', 'N20190612S0128',
+                'N20190612S0129', 'N20190613S0229', 'N20190613S0230',
+                'N20190613S0233', 'N20190613S0234', 'N20190613S0237']    # Cubes with spatial offset
+cube_ref = 'N20190611S0257'    # Reference cube
+overwrite = True    # Overwritting the pixel values of spatially non-aligned cubes
 pixel_scale = 0.1    # arcsec/pixel
 
 
 # ----- Wavelength setting ----- #
-redshift = 0.3424    # Redshift of galaxy
-wav_range_res = np.array([6520.0, 6600.0])    # H alpha wavelength range (rest-frame)
-check_x = [15, 55]    # [xmin, xmax] for check (including object and some bad regions)
-check_y = [5, 45]    # [ymin, ymax] for check (including object and some bad regions)
+redshift = 0.3527    # Redshift of galaxy
+wav_range_res = np.array([6550.0, 6580.0])    # H alpha wavelength range (rest-frame)
+check_x = [33, 65]    # [xmin, xmax] for check (including object and some bad regions)
+check_y = [2, 46]    # [ymin, ymax] for check (including object and some bad regions)
 
 # Reading wavelength range
 wav_0, wav_1, dwav = [], [], []
