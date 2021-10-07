@@ -53,14 +53,26 @@ f.close()
 offset_X, offset_Y = np.loadtxt('offset.txt').T
 dhs0 = fits.getdata(sorted(glob.glob("Ha_sum-*.fits"))[0], ext=0, header=False)
 dhs2 = np.zeros((len(ic.cube_list), dhs0.shape[0], dhs0.shape[1]))
+if (len(ic.cube_spa_off) > 0):
+	dhs3 = np.zeros((len(ic.cube_list)-len(ic.cube_spa_off), dhs0.shape[0], dhs0.shape[1]))
+j = 0
 for i in np.arange(len(ic.cube_list)):
 	dhs, hdr = fits.getdata("Ha_sum-"+ic.cube_name[i]+".fits", ext=0, header=True)
 	dhs_shifted = ndimage.shift(dhs, shift=(-offset_Y[i], -offset_X[i]), mode='nearest')
 	fits.writeto('al1_Ha_sum-'+ic.cube_name[i]+'.fits', dhs_shifted, hdr, overwrite=True)
 	dhs2[i,:,:] = dhs_shifted
+	if (ic.cube_name[i] not in ic.cube_spa_off):
+		dhs3[j,:,:] = dhs_shifted
+		j += 1
 
 # Combining the shifted images
 cdhs = np.median(dhs2, axis=0)
+
+##### Needed to be revised manually after visual check! #####
+if ((len(ic.cube_spa_off) > 0) & (ic.overwrite == True)):
+	cdhs[:,61:] = np.median(dhs3[:,:,61:], axis=0)
+##########
+
 fits.writeto('al1_fcomb.fits', cdhs, overwrite=True)
 disp = "ds9 -scalemode zscale -scale lock yes -frame lock image "
 tile = "-tile grid mode manual -tile grid layout "
