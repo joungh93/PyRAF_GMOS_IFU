@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Feb 20 18:10:15 2020
-
 @author: jlee
 """
 
@@ -51,7 +50,8 @@ for k in tqdm.trange(d_sci.shape[0]):
 		ds[i,:,:] = d_sci[k,:,:]
 		dv[i,:,:] = d_var[k,:,:]
 
-		if (al2_cubes[i].split("al2_")[-1].split("_3D.fits")[0] not in ic.cube_spa_off):
+		if ((len(ic.cube_spa_off) > 0) & \
+			(al2_cubes[i].split("al2_")[-1].split("_3D.fits")[0] not in ic.cube_spa_off)):
 			ds2[j,:,:] = d_sci[k,:,:]
 			j += 1
 
