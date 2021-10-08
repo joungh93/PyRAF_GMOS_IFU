@@ -62,7 +62,7 @@ for i in np.arange(len(ic.cube_list)):
 	dhs_shifted = ndimage.shift(dhs, shift=(-offset_Y[i], -offset_X[i]), mode='nearest')
 	fits.writeto('al1_Ha_sum-'+ic.cube_name[i]+'.fits', dhs_shifted, hdr, overwrite=True)
 	dhs2[i,:,:] = dhs_shifted
-	if (ic.cube_name[i] not in ic.cube_spa_off):
+	if ((len(ic.cube_spa_off) > 0) & (ic.cube_name[i] not in ic.cube_spa_off)):
 		dhs3[j,:,:] = dhs_shifted
 		j += 1
 
