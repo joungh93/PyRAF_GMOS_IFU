@@ -514,7 +514,7 @@ if (__name__ == '__main__'):
     from astropy.io import fits
 
     # ----- Basic parameters ----- #
-    redshift = 0.3527
+    redshift = 0.3424
     dir_vbin = 'vorbin/'
     dir_lines = 'lines3/'
     if (glob.glob(dir_lines) == []):
@@ -528,19 +528,32 @@ if (__name__ == '__main__'):
     # wav, sci, var
     data_vbin = fits.getdata(dir_vbin+'vbin.fits').astype('int')
     nvbin = np.unique(data_vbin).size-1
+    data_bfac = fits.getdata('bfac_2D.fits')
 
-    l1 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 1, redshift, dir_lines)
+    l0 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 0, redshift, dir_lines)
+    l1 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 1, redshift, dir_lines,
+                 broad_component=True, data_vbin=data_vbin, data_bfac=data_bfac)
     l2 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 2, redshift, dir_lines)
-    l3 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 3, redshift, dir_lines)
+    l3 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 3, redshift, dir_lines,
+                 broad_component=True, data_vbin=data_vbin, data_bfac=data_bfac)
     l4 = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], 4, redshift, dir_lines)
 
-    test_ibin = [0, 1, 2, 3, 6, 22, 50, 53]
+    test_ibin = [0]
 
     for ibin in test_ibin:
 
+        df0 = l0.solve(ibin, check=True, nwalkers=50,
+                       ndiscard=1000, nsample=1000,
+                       fluct0=1.0e-6, fluct1=1.0e-7, fluct2=1.0e-4)
+        theta0 = df0['sigma'].values[0]
+        for ln in np.arange(l0.nlines):
+            theta0 = np.append(theta0, np.log(df0['mu'].values[ln]))
+            theta0 = np.append(theta0, df0['flux'].values[ln])
+        print(l0.log_prior(theta0, ibin))
+
         # df1 = l1.solve(ibin, check=True, nwalkers=50,
         #                ndiscard=1000, nsample=1000,
-        #                fluct0=1.0e-6, fluct1=1.0e-7, fluct2=1.0e-4)
+        #                fluct0=1.0e-7, fluct1=1.0e-7, fluct2=1.0e-4, broad_component=True)
         # theta1 = df1['sigma'].values[0]
         # for ln in np.arange(l1.nlines):
         #     theta1 = np.append(theta1, np.log(df1['mu'].values[ln]))
@@ -558,7 +571,7 @@ if (__name__ == '__main__'):
 
         df3 = l3.solve(ibin, check=True, nwalkers=50,
                        ndiscard=1000, nsample=1000,
-                       fluct0=1.0e-6, fluct1=1.0e-7, fluct2=1.0e-4)
+                       fluct0=1.0e-6, fluct1=1.0e-7, fluct2=1.0e-4, broad_component=True)
         theta3 = df3['sigma'].values[0]
         for ln in np.arange(l3.nlines):
             theta3 = np.append(theta3, np.log(df3['mu'].values[ln]))
