@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue May 19 09:59:44 2020
-
 @author: jlee
 """
 
@@ -27,7 +26,7 @@ import init_cfg as ic
 
 # Directories
 dir_fig = ic.cpath+"diagram/linefits/"
-diI = "/data/jlee/DATA/HLA/McPartland+16/MACS1258/JFG1/Phot/"
+diI = "/data/jlee/DATA/HLA/McPartland+16/MACS0916/JFG1/Phot/"
 diG = ic.dir_redux
 
 # Reading central RA & Dec
@@ -62,8 +61,8 @@ rotated_img = ndimage.rotate(img, gpa)
 
 
 # ----- Background values ----- #
-m0, m1, m2 = np.nanmean(img[210:290, 20:100], axis=(0,1))
-s0, s1, s2 = np.std(img[210:290, 20:100], axis=(0,1))
+m0, m1, m2 = np.nanmean(img[260:380, 250:370], axis=(0,1))
+s0, s1, s2 = np.std(img[260:380, 250:370], axis=(0,1))
 # print(m0, m1, m2)
 # print(s0, s1, s2)
 
@@ -86,15 +85,6 @@ c = 2.99792e+5    # km/s
 ang_scale = cosmo.kpc_proper_per_arcmin(redshift).value / 60.    # kpc/arcsec
 pixel_scale = 0.1    # arcsec/pix
 
-wav_Ha = 6564.61  # Angstrom
-par, e_par = np.loadtxt('relation_wav_R.txt').T
-Rmax = par[0] + par[1]*wav_Ha*(1+redshift)
-e_Rmax = np.sqrt(e_par[0]**2.0 + (e_par[1]*wav_Ha*(1+redshift))**2.0)
-lsig0 = wav_Ha / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
-e_lsig0 = wav_Ha*e_Rmax / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax*Rmax)
-lsig_llim = lsig0 - 1.0*e_lsig0
-vsig0 = c / (2.0*np.sqrt(2.0*np.log(2.0))*Rmax)
-
 dir_Ha = ic.cpath+'lines3/Halpha/'
 Ha_flx = fits.getdata(dir_Ha+'flux_2D.fits', ext=0)
 Ha_snr = fits.getdata(dir_Ha+'snr_2D.fits', ext=0)
@@ -102,15 +92,10 @@ Ha_sig = fits.getdata(dir_Ha+'sigma_2D.fits', ext=0)
 Ha_rchisq = fits.getdata(dir_Ha+'rchisq_2D.fits', ext=0)
 Ha_snrpix = fits.getdata(dir_Ha+'snrpix_2D.fits', ext=0)
 
-snr_cnd = ((Ha_snr < 3.0) | (Ha_snrpix < 5.0))
-# sig_cnd = (Ha_sig < lsig_llim)
-rchi25, rchi50, rchi75 = np.percentile(Ha_rchisq[Ha_rchisq > 0.], [25.0, 50.0, 75.0])
+snr_cnd = ((Ha_snr < 3.0) | (Ha_snrpix < 3.0))
 rchisq_cnd = (Ha_rchisq > 50.)
-flx25, flx50, flx75 = np.percentile(Ha_flx[Ha_flx > 0.], [25.0, 50.0, 75.0])
-flx_cnd = (Ha_flx < flx50)
-zero_cnd = (snr_cnd | rchisq_cnd)# | flx_cnd)
-# zero_cnd = (snr_cnd | flx_cnd)
-Ha_flx[zero_cnd] = 0.
+zero_cnd = (snr_cnd | rchisq_cnd)
+Ha_flx[snr_cnd] = 0.
 sflx = ndimage.gaussian_filter(Ha_flx, sigma=(1.25, 1.25), order=0)
 
 
@@ -167,8 +152,8 @@ def plot_contour(hst_Data, sflux_Data, out, legend_position='lower left',
     im = ax.imshow(hst_Data, extent=[-3.4,3.4,-2.45,2.45],
                    origin='lower', aspect='equal')
 
-    sig = np.std(sflux_Data)
-    lvs = [0.25*sig, 0.5*sig, 1.*sig, 3.*sig, 5.*sig, 7.5*sig]
+    sig = np.std(sflux_Data[sflux_Data > 0.])
+    lvs = [0.5*sig, 1.*sig, 2.*sig, 3.*sig, 4.*sig]
     lws = tuple(np.repeat(3.75, len(lvs)-1))
     cs = tuple(['magenta']*(len(lvs)-1))
 
@@ -203,8 +188,8 @@ def plot_contour(hst_Data, sflux_Data, out, legend_position='lower left',
     plt.close()
 
 plot_contour(corr_hstimg, sflx, dir_fig+"Halpha_contour", legend_position='lower left',
-             x0=3.00, y0=1.75, sign=1, L=0.6, theta0=gpa*(np.pi/180.0),
-             xN=2.00, yN=2.10, xE=2.40, yE=0.80)
+             x0=3.00, y0=1.25, sign=-1, L=0.6, theta0=gpa*(np.pi/180.0),
+             xN=3.00, yN=2.10, xE=1.95, yE=1.30)
 
 
 # ----- Saving the results ----- #
