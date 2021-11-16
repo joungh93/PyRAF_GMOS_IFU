@@ -22,7 +22,7 @@ rawfile = sorted(glob.glob('*.fits'))
 
 # ----- Reading FITS headers ----- #
 f = open(current_dir+'/'+'info.txt','w')
-f.write("# FILENAME  OBJTYPE  OBSCLASS  CENTWAVE  DATALAB  MASKNAME  GRATING  AIRMASS  MJD-OBS\n")
+f.write("# FILENAME  OBJTYPE  OBSCLASS  CENTWAVE  DATALAB  EXPTIME  MASKNAME  GRATING  AIRMASS  MJD-OBS\n")
 for i in rawfile:
 	h0 = fits.getheader(i, ext=0)
 	h1 = fits.getheader(i, ext=1)
