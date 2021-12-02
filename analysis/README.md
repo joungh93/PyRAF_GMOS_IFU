@@ -1,5 +1,5 @@
 # Analysis
-(updated on 2021. 9. 7.)
+(updated on 2021. 12. 2.)
 
 ## Description
 * Combining the reduced Gemini GMOS/IFU cubes
