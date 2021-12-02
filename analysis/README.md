@@ -45,6 +45,7 @@ $ jupyter-notebook def_boundary2.ipynb &
 #### 2-4. Voronoi binning
 ```
 $ jupyter-notebook vbin_init.ipynb &
+$ jupyter-notebook contfit_init.ipynb &
 > run spec0_vbin.py
 ```
 
