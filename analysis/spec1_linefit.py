@@ -14,14 +14,15 @@ import numpy as np
 import glob, os
 from matplotlib import pyplot as plt
 from astropy.io import fits
-from linefit import linefit
+# from linefit import linefit
+from linefit3 import linefit
 # from linefit import linear
 
 
 # ----- Basic parameters ----- #
-redshift = 0.3033
+redshift = 0.3424
 dir_vbin = 'vorbin/'
-dir_lines = 'lines2/'
+dir_lines = 'lines3/'
 os.system('rm -rfv '+dir_lines+'*')
 os.system('mkdir '+dir_lines+'check/')
 
@@ -31,16 +32,21 @@ vb = np.load(dir_vbin+'vorbin_array.npz')
 # wav, sci, var, cont
 data_vbin = fits.getdata(dir_vbin+'vbin.fits').astype('int')
 nvbin = np.unique(data_vbin).size-1
-img_g2d = fits.getdata('gfac.fits')
+data_bfac_Ha = fits.getdata('bfac_bin_Ha.fits')
+data_bfac_Hb = fits.getdata('bfac_bin_Hb.fits')
 
 
 # ----- Line fitting ----- #
 
-for num_line in [3, 4, 5]:
+for num_line in [0, 3, 4, 6]:#[0, 1, 2, 3, 4]:
 
     # Loading linefit class
+    if (num_line == 6):
+        data_bfac = data_bfac_Hb
+    else:
+        data_bfac = data_bfac_Ha
     l = linefit(vb['wav'], vb['sci'], vb['var'], vb['cont'], num_line, redshift, dir_lines,
-                broad_component=True, data_vbin=data_vbin, data_gaussian=img_g2d)
+                broad_component=True, data_vbin=data_vbin, data_bfac=data_bfac)
 
     # 2D data initialization
     for ln in np.arange(l.nlines):
@@ -51,20 +57,20 @@ for num_line in [3, 4, 5]:
             exec(col+f"_{ln:d} = arr")
             
     # MCMC fitting of all the bins
-    for ibin in np.arange(5):#np.arange(nvbin):
+    for ibin in np.arange(nvbin):
         df = l.solve(ibin, check=True, nwalkers=50,
                      ndiscard=1000, nsample=1000,
-                     fluct0=1.0e-4, fluct1=5.0e-5, fluct2=1.0e-4,
-                     broad_component=True)
-        
+                     fluct0=1.0e-7, fluct1=1.0e-7, fluct2=1.0e-4, broad_component=True)
+    
         if (ibin == 0):
             rchisq0 = np.array([])
             for ln in np.arange(l.nlines):
                 rchisq0 = np.append(rchisq0, df['rchisq'].values[ln])
 
-        theta = df.values[0, 5]
+        theta = df['sigma'].values[0]
         for ln in np.arange(l.nlines):
-            theta = np.append(theta, df.values[ln, 1:10:8])
+            theta = np.append(theta, np.log(df['mu'].values[ln]))
+            theta = np.append(theta, df['flux'].values[ln])
 
         # Solutions to 2D data
         nvbin_region = (data_vbin == ibin)
