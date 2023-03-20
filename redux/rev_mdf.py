@@ -243,10 +243,16 @@ for j in np.arange(len(dir_sci)):
 
     # Interative tasks for the first science data for each central wavelength
     if (j == 0):
+        dir_db0 = current_dir+"/"+dir_sci[j]+"/"+ic.dir_db
+        apfile0 = apfile
         # Verify the MDF again
         iraf.imdelete('erg@'+ic.lst_flat)
         iraf.gfextract('rg'+flat0, fl_inter='yes', line=ic.pk_line, exslits=ic.eslit)
+    else:
+        for k in np.arange(len(apfile)):
+            os.system('cp -rpv '+dir_db0+apfile0[k]+' '+ic.dir_db)
 
     # Coming back to current path
     os.chdir(current_dir)
     iraf.chdir(current_dir) 
+
