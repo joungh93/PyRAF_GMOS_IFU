@@ -88,7 +88,7 @@ GMOS-S: 'onedstds$ctioextinct.dat'
 sensfunc = starname+'_650_20210408_sens'
 '''
 Output file name for sensitivity function
-(i.e. [starname]_[centwave]_[obsdate]_)
+(i.e. [starname]_[centwave]_[obsdate]_sens)
 '''
 
 obs_site = 'Gemini-North'
