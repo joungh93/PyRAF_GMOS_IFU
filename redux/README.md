@@ -1,18 +1,17 @@
-# standard
-(updated on 2021. 8. 26.)
+# redux
+(updated on 2023. 3. 22.)
 
 ## Description
-Gemini GMOS/IFU reduction for standard star data
-* Standard star reduction is needed for flux calibration of science observations.
+Gemini GMOS/IFU reduction for science object data
+* Science object pre-processing is similar to the workflow of the standard star processing.
 
 ## Workflow
 
 ### 0) Initial configurations
-* Now move to the directory with standard star data, and check all the list files (`std*.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode. _**For the detailed explanation for the revision, please refer to those comments in the code.**_
+* Now move to each directory with science object data (`redux/w[CENT_WAVE]/[OBS_ID]/`), and check if all the list files (`sci.lis`, `flat.lis`, and `arc.lis`) have proper files. It is normal for each list file to include only one FITS file. Then, `g0_init_cfg.py` should be revised for the names of necessary files and the slit mode. _**For the detailed explanation for the revision, please refer to those comments in the code.**_
 
 ```
-$ cd standard/
-$ cat std[*].lis
+$ cd redux/
 $ vi g0_init_cfg.py
 (Revising)
 
