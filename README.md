@@ -8,7 +8,7 @@ Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * This code is only for GMOS/IFU 2-slit mode. For 1-slit mode, I will update later.
 * Reference
   * [GMOS/IFU-1 Data Reduction Tutorial](https://gmos-ifu-1-data-reduction-tutorial-gemini-iraf.readthedocs.io/en/latest/index.html)
-  * [GMOS Data Reduction Cookbook](http://ast.noao.edu/sites/default/files/GMOS_Cookbook/index.html)
+  * [GMOS Data Reduction Cookbook](https://noirlab.edu/science/programs/csdc/usngo/gmos-cookbook/Processing/PyrafProcIFU.html)
 
 ## Prerequisites
 * Gemini GMOS/IFU raw data and the associated calibration data (bias) will be needed.
