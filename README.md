@@ -95,6 +95,8 @@ $ ipython
 ``init_info.py`` writes a text file with all the information of raw data, and ``mk_list.py`` makes the basic structures of directories for the reduction process.
 
 ### 3) Setting ``astroconda`` environment for running PyRAF
+Before activating ``astroconda`` environment, you should check and revise ``login.cl`` file.
+
 ```
 $ conda activate iraf27
 $ ipython
