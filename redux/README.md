@@ -141,7 +141,7 @@ $ jupyter-notebook & (or jupyter-lab &)
 	- "l" : identify the night sky lines
 	- "f" : fit for the mean velocity
 	- "q" : write the parameters to the log file and quit the task
-The header information (`CRVAL*`) would be revised after running this task.
+The header information ('CRVAL*') would be revised after running this task.
 ```
 
 :smiley_cat:❓ For more detailed instructions, please refer to the comments in the codes. :turtle::whale: 
