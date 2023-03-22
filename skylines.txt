@@ -1,0 +1,16 @@
+# From Osterbrock, 1996 (entered manually from the plots), ignoring
+# lines close together -- JT
+#
+5889.953  NaD2
+5895.923  NaD1
+5932.862  OH 8-2 P1 (3.5)
+6257.961  OH 9-3 Q1 (1.5)
+6287.434  OH 9-3 P1 (2.5)
+6300.304  [OI]
+6498.729  OH 6-1 Q1 (1.5)
+6533.044  OH 6-1 P1 (2.5)
+6553.617  OH 6-1 P1 (3.5)
+6863.955  OH 7-2 Q1 (1.5)
+6900.833  OH 7-2 P1 (2.5)
+6912.623  OH 7-2 P2 (2.5)
+6923.220  OH 7-2 P1 (3.5)
