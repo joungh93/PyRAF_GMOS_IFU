@@ -1,5 +1,5 @@
 # PyRAF_GMOS_IFU
-(updated on 2023. 3. 22.)
+(updated on 2023. 5. 8.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
@@ -87,6 +87,7 @@ After checking these, run ``view_rawdata.py`` with revising the file names for v
 ### 2) Writing raw data file list
 ```
 $ ipython
+> run set_login.py
 > run init_info.py
 > (run view_rawdata.py)
 > run mk_list.py
