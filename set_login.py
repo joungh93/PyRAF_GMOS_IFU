@@ -40,7 +40,7 @@ idx10_1 = idx10_0 + lg[10][idx10_0:].index('"')
 lg[10] = lg[10].replace(lg[10][idx10_0:idx10_1], usr_id)
 
 idx74_0 = lg[74].index('=')+1
-lg[74] = lg[74].replace(lg[74][idx74_0:], current_dir+"login.cl\n")
+lg[74] = lg[74].replace(lg[74][idx74_0:], current_dir+"lacos_spec.cl\n")
 
 with open("login.cl", "w") as f:
     f.writelines(lg)
