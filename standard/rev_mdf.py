@@ -102,11 +102,19 @@ for i in np.arange(N_apr):
 		'''
 
 		# ----- START ----- #
-		if (apr_num == 200):
+		if (apr_num <= 2):
 			continue
-		else:
-			g.writelines(apr_info)
-			idx_apr_eff.append(int(apr_info[1].split()[3])-1)
+		elif (apr_num >= 3):
+			shift = -2
+			if (apr_num in [139, 140, 206, 207, 691, 694]):
+				shift = -3
+			elif (apr_num in [693]):
+				shift = -4
+			apr_info[1] = apr_info[1].replace(apr_info[1].split()[3], '{0:d}'.format(apr_num+shift))
+			apr_info[2] = '\ttitle\t{0:.3f}   {1:.3f} '.format(mdfdata['XINST'][apr_num+shift-1], mdfdata['YINST'][apr_num+shift-1])+mdfdata['BLOCK'][apr_num+shift-1]+'\n'
+			apr_info[4] = '\taperture\t{0:d}\n'.format(apr_num+shift)
+			g.writelines(apr_info)			
+		idx_apr_eff.append(int(apr_info[1].split()[3])-1)
 		# ----- END ----- #		
 
 g.close()
