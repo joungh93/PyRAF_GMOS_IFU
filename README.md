@@ -1,11 +1,11 @@
 # PyRAF_GMOS_IFU
-(updated on 2023. 5. 8.)
+(updated on 2023. 5. 11.)
 
 ## Description
 Gemini GMOS/IFU reduction & analysis package imported by PyRAF
 * This package is only applicable to an observing program with a single field (not yet to multiple programs/fields... :crying_cat_face: :sweat_drops:).
 * In principle, **_one science observation_** per **_one GCAL flat_** is best for this GMOS/IFU reduction workflow. However, there are some exclusive cases (i.e. saturated flats). These codes will be improved to deal with the problems.
-* This code is only for GMOS/IFU 2-slit mode. For 1-slit mode, I will update later.
+* This code is applicable to both GMOS/IFU 1-slit and 2-slit modes.
 * Reference
   * [GMOS/IFU-1 Data Reduction Tutorial](https://gmos-ifu-1-data-reduction-tutorial-gemini-iraf.readthedocs.io/en/latest/index.html)
   * [GMOS Data Reduction Cookbook](https://noirlab.edu/science/programs/csdc/usngo/gmos-cookbook/Processing/PyrafProcIFU.html)
