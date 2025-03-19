@@ -28,11 +28,17 @@ for i in rawfile:
 	h1 = fits.getheader(i, ext=1)
 	objtype = h0['OBSTYPE'].strip()
 	objclass = h0['OBSCLASS'].strip()
-	centwave = str(h0['CENTWAVE'])
+	if (h0['INSTRUME'][:4] == 'GMOS'):
+		centwave = str(h0['CENTWAVE'])
+	if (h0['INSTRUME'] == 'F2'):
+		centwave = str(h0['WAVELENG'])
 	datalabel = h0['DATALAB'].strip()
 	exptime = f"{h0['EXPTIME']:.1f}"
 	mask = h0['MASKNAME'].strip()
-	grating = h0['GRATING'].strip()
+	if (h0['INSTRUME'][:4] == 'GMOS'):
+		grating = h0['GRATING'].strip()
+	if (h0['INSTRUME'] == 'F2'):
+		grating = h0['GRISM'].strip()
 	airmass = f"{h0['AIRMASS']:.4f}"
 	mjd = f"{h1['MJD-OBS']:f}"
 
