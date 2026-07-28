@@ -12,6 +12,7 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+import subprocess
 
 
 # ----- File name & directory ----- #
@@ -41,12 +42,36 @@ iraf.chdir(current_dir)
 iraf.imdelete(procbias)
 iraf.imdelete('g@'+lst_bias)
 iraf.gbias('@'+lst_bias, procbias, rawpath=rawdir, fl_vardq='yes')
-iraf.copy(procbias, caldir)
+# iraf.copy(procbias, caldir)
+os.system(f"cp -rpv {procbias} {caldir}")
 
 
 # ----- Inspecting the processed bias ----- #
-os.system('ds9 &')
-iraf.sleep(5.0)
+# os.system('/home/jhlee/Downloads/ds9 &')
+subprocess.Popen(['/home/jhlee/Downloads/ds9'])
+
+# Wait until DS9 is ready
+for i in range(30):
+    try:
+        result = subprocess.run(
+            ['xpaget', 'ds9',],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=1
+        )
+
+        if result.returncode == 0:
+            break
+
+    except Exception:
+        pass
+
+    time.sleep(1)
+
+else:
+    raise RuntimeError("DS9 did not become ready within 30 seconds.")
+
+# iraf.sleep(5.0)
 iraf.gdisplay(procbias, 1, fl_paste='no')
 
 
