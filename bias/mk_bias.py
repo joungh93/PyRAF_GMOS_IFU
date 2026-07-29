@@ -12,6 +12,7 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+import shutil
 import subprocess
 
 
@@ -47,8 +48,8 @@ os.system(f"cp -rpv {procbias} {caldir}")
 
 
 # ----- Inspecting the processed bias ----- #
-# os.system('/home/jhlee/Downloads/ds9 &')
-subprocess.Popen(['/home/jhlee/Downloads/ds9'])
+ds9_path = shutil.which('ds9')
+subprocess.Popen([ds9_path])
 
 # Wait until DS9 is ready
 for i in range(30):
