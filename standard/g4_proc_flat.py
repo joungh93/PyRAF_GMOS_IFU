@@ -12,6 +12,8 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+import subprocess
+import shutil
 import g0_init_cfg as ic
 
 
@@ -85,10 +87,36 @@ if (ic.nslit == 1):
     vkw = '1'
 if (ic.nslit == 2):
     vkw = '*'
-os.system('ds9 &')
-iraf.sleep(5.0)
-iraf.gfdisplay('eqbrg'+flat0, 1, version=vkw)
+# os.system('ds9 &')
+ds9_path = shutil.which('ds9')
+subprocess.Popen([ds9_path])
 
+# Wait until DS9 is ready
+for i in range(30):
+    try:
+        result = subprocess.run(
+            ['xpaget', 'ds9',],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=1
+        )
+
+        if result.returncode == 0:
+            break
+
+    except Exception:
+        pass
+
+    time.sleep(1)
+
+else:
+    raise RuntimeError("DS9 did not become ready within 30 seconds.")
+# iraf.sleep(5.0)
+iraf.gfdisplay('eqbrg'+flat0, 1, version=vkw)
+'''
+Press <spacebar> on a fiber to see the spectrum.
+Type "q" to quit.
+'''
 
 # ---------- Response function ---------- #
 iraf.imdelete(flat0+'_resp')
