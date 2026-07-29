@@ -12,6 +12,9 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+from pathlib import Path
+import shutil
+import subprocess
 import g0_init_cfg as ic
 
 
@@ -50,8 +53,11 @@ iraf.gftransform('xeqxbrg'+std0, wavtraname='erg'+arc0, fl_vardq='yes')
 iraf.imdelete('stxeqxbrg@'+ic.lst_std, verify='no')
 iraf.gfskysub('txeqxbrg'+std0, fl_inter='no', combine='median', sepslits='yes')
 
-ds9_comm = "ds9 -scalemode zscale -scale lock yes -frame lock image "
-os.system(ds9_comm+"txeqxbrg"+std0+".fits[2] stxeqxbrg"+std0+".fits[2] &")
+ds9_path = shutil.which('ds9')
+ds9_comm = ds9_path+" -scalemode zscale -scale lock yes -frame lock image "
+# os.system(ds9_comm+"txeqxbrg"+std0+".fits[2] stxeqxbrg"+std0+".fits[2] &")
+subprocess.run(ds9_comm+"txeqxbrg"+std0+".fits[2] stxeqxbrg"+std0+".fits[2] &",
+               shell=True)
 
 
 # Printing the running time
