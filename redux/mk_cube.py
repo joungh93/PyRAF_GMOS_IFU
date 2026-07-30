@@ -58,6 +58,22 @@ for d in ic.dir_wav:
 
         fits.open('cstxeqxbrg'+sci0+'_3D.fits').info()
 
+        # Temporary files
+        os.system("rm -rfv tmp*")
+
+        ### FLAT
+        for prefix in ['g@' ,'rg@', 'brg@' ,'qbrg@']:
+            iraf.imdelete(prefix+ic.lst_flat)
+
+        ### ARC
+        for prefix in ['g@', 'rg@']:
+            iraf.imdelete(prefix+ic.lst_arc)
+
+        ### SCI
+        for prefix in ['g@', 'rg@', 'brg@', 'xbrg@', 'qxbrg@',
+                       'eqxbrg@', 'xeqxbrg@', 'txeqxbrg@']:
+            iraf.imdelete(prefix+ic.lst_sci)
+
         # Coming back to current path
         os.chdir(current_dir)
         iraf.chdir(current_dir)  
