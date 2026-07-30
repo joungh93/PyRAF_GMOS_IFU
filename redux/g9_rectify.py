@@ -12,6 +12,10 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+from pathlib import Path
+import shutil
+ds9_path = shutil.which('ds9')
+import subprocess
 import g0_init_cfg as ic
 
 
@@ -56,8 +60,9 @@ for d in ic.dir_wav:
         iraf.imdelete('stxeqxbrg@'+ic.lst_sci, verify='no')
         iraf.gfskysub('txeqxbrg'+sci0, fl_inter='no', combine='median', sepslits='yes')
 
-        ds9_comm = "ds9 -scalemode zscale -scale lock yes -frame lock image "
-        os.system(ds9_comm+"txeqxbrg"+sci0+".fits[2] stxeqxbrg"+sci0+".fits[2] &")
+        ds9_comm = ds9_path+" -scalemode zscale -scale lock yes -frame lock image "
+        subprocess.run(ds9_comm+"txeqxbrg"+sci0+".fits[2] stxeqxbrg"+sci0+".fits[2] &",
+                       shell=True)
 
         # Coming back to current path
         os.chdir(current_dir)
