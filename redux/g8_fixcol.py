@@ -12,8 +12,16 @@ start_time = time.time()
 
 import numpy as np
 import glob, os, copy
+from pathlib import Path
+import subprocess
+import shutil
+ds9_path = shutil.which('ds9')
+
 import g0_init_cfg as ic
 from astropy.io import fits
+
+import sys
+sys.path.append(str(Path.cwd().resolve().parent))
 from reg_saoimage import read_region
 
 
@@ -69,15 +77,19 @@ for d in ic.dir_wav:
         # Saving masking coordinates in text files
         dic = copy.deepcopy(fix_sci)
         for j in np.arange(ic.nslit):
-            fmsk = 'mskbadcol_'+sci0+'_{0:1d}.txt'.format(j+1)
-            s = dic['slit{0:1d}'.format(j+1)]
+            fmsk = f"mskbadcol_{sci0}_{j+1:1d}.txt"
+            s = dic[f"slit{j+1:1d}"]
             exec('d = dt{0:1d}'.format(j+1))
             for k in np.arange(len(s[0])):
                 if (k == 0):
-                    com = "echo '{0:d} {1:d} 1 {2:d}' > ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
+                    com  = f"echo {np.int32(np.round(s[0][k]-s[1][k]/2)):d} {np.int32(np.round(s[0][k]+s[1][k]/2)):d}"
+                    com += f" 1 {d.shape[0]:d} > "
+                    com += fmsk
                     os.system(com)
                 else:
-                    com = "echo '{0:d} {1:d} 1 {2:d}' >> ".format(s[0][k]-s[1][k]/2, s[0][k]+s[1][k]/2, d.shape[0])+fmsk
+                    com  = f"echo {np.int32(np.round(s[0][k]-s[1][k]/2)):d} {np.int32(np.round(s[0][k]+s[1][k]/2)):d}"
+                    com += f" 1 {d.shape[0]:d} >> "
+                    com += fmsk
                     os.system(com)
             iraf.text2mask(fmsk, fmsk.strip('.txt')+'.pl', d.shape[1], d.shape[0])
 
@@ -110,16 +122,18 @@ for d in ic.dir_wav:
 
         if (ic.nslit == 1):
             z1, z2 = z1l, z1u
-            ds9_frm = "ds9 xeqxbrg"+sci0+".fits[2] -multiframe"
+            ds9_img = " xeqxbrg"+sci0+".fits[2]"
+            ds9_frm = " -multiframe"
             ds9_loc = " -scale lock yes -frame lock image"
-            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+            ds9_scl = " -scale limits {0:.2f} {1:.2f} ".format(z1, z2)
         if (ic.nslit == 2):
             z1, z2 = 0.5*(z1l+z2l), 0.5*(z1u+z2u)
-            ds9_frm = "ds9 xeqxbrg"+sci0+".fits[2] xeqxbrg"+sci0+".fits[5] -multiframe"
+            ds9_img = " xeqxbrg"+sci0+".fits[2] xeqxbrg"+sci0+".fits[5] "
+            ds9_frm = " -multiframe"
             ds9_loc = " -scale lock yes -frame lock image"
-            ds9_scl = " -scale limits {0:.2f} {1:.2f} &".format(z1, z2)
+            ds9_scl = " -scale limits {0:.2f} {1:.2f} ".format(z1, z2)
 
-        os.system(ds9_frm + ds9_loc + ds9_scl)
+        subprocess.run([ds9_path + ds9_img + ds9_frm + ds9_loc + ds9_scl], shell=True)
 
         # Coming back to current path
         os.chdir(current_dir)
