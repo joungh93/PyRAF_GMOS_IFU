@@ -46,6 +46,9 @@ iraf.gbias('@'+lst_bias, procbias, rawpath=rawdir, fl_vardq='yes')
 # iraf.copy(procbias, caldir)
 os.system(f"cp -rpv {procbias} {caldir}")
 
+os.system("rm -rfv tmp*")
+iraf.imdelete('g@'+lst_bias)
+
 
 # ----- Inspecting the processed bias ----- #
 ds9_path = shutil.which('ds9')
