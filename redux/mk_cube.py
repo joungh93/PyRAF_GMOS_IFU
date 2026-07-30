@@ -12,6 +12,11 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+from pathlib import Path
+import shutil
+ds9_path = shutil.which('ds9')
+import subprocess
+
 import g0_init_cfg as ic
 
 
@@ -57,7 +62,9 @@ for d in ic.dir_wav:
         os.chdir(current_dir)
         iraf.chdir(current_dir)  
 
-os.system('ds9 -scalemode zscale w*/*/cstxeqxbrg*_3D.fits &')
+# os.system(ds9_path + ' -scalemode zscale w*/*/cstxeqxbrg*_3D.fits &')
+subprocess.run(ds9_path + ' -scalemode zscale -cube lock wcs w*/*/cstxeqxbrg*_3D.fits &',
+               shell=True)
 
 
 # Printing the running time
