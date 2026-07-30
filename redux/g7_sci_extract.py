@@ -12,6 +12,10 @@ start_time = time.time()
 
 import numpy as np
 import glob, os
+import subprocess
+import shutil
+ds9_path = shutil.which('ds9')
+
 import g0_init_cfg as ic
 from astropy.io import fits
 
@@ -106,9 +110,11 @@ for d in ic.dir_wav:
         iraf.chdir(current_dir)
 
     ds9_opt = "-scalemode zscale -scale lock yes -frame lock image -mode region -regions shape box"
-    os.system("ds9 "+ds9_opt+" "+filenames1+"&")
+    # os.system(ds9_path+" "+ds9_opt+" "+filenames1+"&")
+    subprocess.run([ds9_path+" "+ds9_opt+" "+filenames1], shell=True)
     if (ic.nslit == 2):
-        os.system("ds9 "+ds9_opt+" "+filenames2+"&")
+        # os.system(ds9_path+" "+ds9_opt+" "+filenames2+"&")
+        subprocess.run([ds9_path+" "+ds9_opt+" "+filenames2], shell=True)
 
 
 # Printing the running time
