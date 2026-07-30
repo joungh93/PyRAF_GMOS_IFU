@@ -79,6 +79,19 @@ iraf.gsstandard('astxeqxbrg'+std0, outflux, sensfunc,
 os.system("cp -rpv "+sensfunc+".fits "+ic.caldir)
 os.system("rm -rfv tmp*")
 
+### FLAT
+for prefix in ['g@' ,'rg@', 'brg@' ,'qbrg@']:
+    iraf.imdelete(prefix+ic.lst_flat)
+
+### ARC
+for prefix in ['g@', 'rg@']:
+    iraf.imdelete(prefix+ic.lst_arc)
+
+### SCI
+for prefix in ['g@', 'rg@', 'brg@', 'xbrg@', 'qxbrg@',
+               'eqxbrg@', 'xeqxbrg@', 'txeqxbrg@']:
+    iraf.imdelete(prefix+ic.lst_std)
+
 
 # Printing the running time
 print('--- %.3f seconds ---' %(time.time()-start_time))
