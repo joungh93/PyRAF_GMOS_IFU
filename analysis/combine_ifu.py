@@ -216,7 +216,6 @@ def combine_weighted(science_stack, variance_stack,
     weight_sum = np.sum(weights, axis=0, dtype=np.float64)
 
     combined_science = np.full(science_stack.shape[1:], np.nan, dtype=np.float64)
-
     combined_variance = np.full_like(combined_science, np.nan)
 
     np.divide(
@@ -353,12 +352,28 @@ for index, (path, dx, dy) in enumerate(
 science_stack  = np.stack(aligned_science, axis=0)
 variance_stack = np.stack(aligned_variance, axis=0)
 
+'''
+##### Check #####
+sci_header = update_spectral_header(reference_sci_header, wave_new)
+var_header = update_spectral_header(reference_var_header, wave_new)
+
+for index in range(len(cube_paths)):
+    sci_hdu  = fits.ImageHDU(data=science_stack[index, :, :, :], header=sci_header, name="SCI")
+    var_hdu  = fits.ImageHDU(data=variance_stack[index, :, :, :], header=var_header, name="VAR")
+
+    output_path = Path(ic.dir_cmb) / f"a{str(cube_paths[index]).split("/")[-1].split('cstxeqxbrg')[-1]}"
+
+    new_hdul = fits.HDUList([fits.PrimaryHDU(header=primary_header), sci_hdu, var_hdu])
+    new_hdul.writeto(output_path, overwrite=True)
+#################
+'''
+
 final_science, final_variance, n_contributing = (
     combine_weighted(
         science_stack,
         variance_stack,
-        sigma=3.0,
-        maxiters=5,
+        sigma=None,
+        maxiters=None,
     )
 )
 
@@ -371,7 +386,7 @@ sci_hdu  = fits.ImageHDU(data=final_science , header=sci_header, name="SCI")
 var_hdu  = fits.ImageHDU(data=final_variance, header=var_header, name="VAR")
 nexp_hdu = fits.ImageHDU(data=n_contributing, header=sci_header, name="NEXP")
 
-output_path = Path(ic.dir_cmb) / "fcube_3D.fits"
+output_path = Path(ic.dir_cmb) / "combined_cube_3D.fits"
 
 new_hdul = fits.HDUList([fits.PrimaryHDU(header=primary_header), sci_hdu, var_hdu, nexp_hdu])
 new_hdul.writeto(output_path, overwrite=True)
@@ -384,15 +399,7 @@ print(
 print(f"Number of wavelength bins: {wave_new.size}")
 print(f"Elapsed time: {time.time() - start_time:.2f} s")
 
-try:
-    subprocess.run(ds9_path + " -scalemode zscale -cube lock wcs " + \
-                   " ".join(ic.cube_list)+f" {str(output_path)} &",
-                   shell=True)
-except:
-    ds9_path = "/home/jhlee/Downloads/ds9"
-    subprocess.run(ds9_path + " -scalemode zscale -cube lock wcs " + \
-                   " ".join(ic.cube_list)+f" {str(output_path)} &",
-                   shell=True)
+
 
 # if __name__ == "__main__":
     # main()
