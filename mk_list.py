@@ -26,7 +26,7 @@ current_dir = os.getcwd()
 # ----- Reading info.txt ----- #
 df = np.genfromtxt('info.txt', dtype=None, encoding='ascii', comments='#',
 	               names=('name','obstype','obsclass','wav0','datalab',
-	               	      'exptime','mask','grating','airmass','mjd'))
+	               	      'exptime','mask','grating','airmass','date','mjd'))
 dlab_id = pd.Series(df['datalab']).str[:-4].values
 seq_num = pd.Series(df['datalab']).str[-3:].values.astype('int')
 
@@ -110,10 +110,14 @@ f.close()
 
 
 # ----- BIAS list ----- #
-f = open(dir_bias+'bias.lis','w')
-for i in np.arange(np.sum(bias)):
-	f.write(df['name'][bias][i]+'\n')
-f.close()
+bias_date_uniq = np.unique(df['date'][bias])
+for date in bias_date_uniq:
+	date_str = "".join(date.split("-"))
+	f = open(dir_bias+f'bias_{date_str}.lis', 'w')
+	_bias = bias & (df['date'] == date)
+	for i in np.arange(np.sum(_bias)):
+		f.write(df['name'][_bias][i]+'\n')
+	f.close()
 
 
 # # ----- ARC list ----- #
