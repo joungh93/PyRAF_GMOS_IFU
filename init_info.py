@@ -22,7 +22,7 @@ rawfile = sorted(glob.glob('*.fits'))
 
 # ----- Reading FITS headers ----- #
 f = open(current_dir+'/'+'info.txt','w')
-f.write("# FILENAME  OBJTYPE  OBSCLASS  CENTWAVE  DATALAB  EXPTIME  MASKNAME  GRATING  AIRMASS  MJD-OBS\n")
+f.write("# FILENAME  OBJTYPE  OBSCLASS  CENTWAVE  DATALAB  EXPTIME  MASKNAME  GRATING  AIRMASS  DATE-OBS  MJD-OBS\n")
 for i in rawfile:
 	h0 = fits.getheader(i, ext=0)
 	h1 = fits.getheader(i, ext=1)
@@ -40,6 +40,7 @@ for i in rawfile:
 	if (h0['INSTRUME'] == 'F2'):
 		grating = h0['GRISM'].strip()
 	airmass = f"{h0['AIRMASS']:.4f}"
+	date = h0['DATE-OBS']
 	mjd = f"{h1['MJD-OBS']:f}"
 
 	f.write(i.strip('.fits')+'  ')
@@ -51,6 +52,7 @@ for i in rawfile:
 	f.write(mask+'  ')
 	f.write(grating+'  ')
 	f.write(airmass+'  ')
+	f.write(date+'  ')
 	f.write(mjd+'\n')
 f.close()
 
