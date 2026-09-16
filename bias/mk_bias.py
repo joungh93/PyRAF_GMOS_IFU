@@ -1,12 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct 30 17:21:30 2019
-
-@author: jlee
-"""
-
-
+# ----- Imports ----- #
 import time
 start_time = time.time()
 
@@ -14,32 +6,44 @@ import numpy as np
 import glob, os
 import shutil
 import subprocess
+from pathlib import Path
 
 
 # ----- File name & directory ----- #
-cpath = os.path.abspath(".")
-dir_iraf = "/".join(cpath.split("/")[:-1])+"/"
-rawdir = dir_iraf+"raw/"
-caldir = dir_iraf+"calibrations/"
-if (glob.glob(caldir) == []):
-	os.mkdir(caldir)
+current_dir = Path.cwd().resolve()
+dir_iraf = Path("../").resolve()
+rawdir = dir_iraf / "raw"
+caldir = dir_iraf / "calibrations"
+caldir.mkdir(parents=True, exist_ok=True)
+
 lst_bias = 'bias.lis'
 procbias = 'Mbias.fits'
 
 
 # ----- Importing IRAF from the root directory ----- #
-current_dir = os.getcwd()
 os.chdir(dir_iraf)
 
 from pyraf import iraf
 from pyraf.iraf import gemini, gmos
 
-iraf.unlearn()
 os.chdir(current_dir)
-iraf.chdir(current_dir)
+iraf.chdir(f"{current_dir}")
+
+iraf.unlearn("gbias")
 
 
-# ----- Making a processed bias ----- #
+# ----- Finding all bias lists ----- #
+bias_lists = sorted(glob.glob("bias_*.lis"))
+if len(bias_lists) == 0:
+    raise RuntimeError("No bias_*.lis files found.")
+
+
+# ----- Making master biases ----- #
+for lst_bias in bias_lists:
+    epoch_tag = Path(bias_lists[0]).stem.split("bias_")[1]
+    procbias = (f"Mbias_{tag}.fits")
+
+
 iraf.imdelete(procbias)
 iraf.imdelete('g@'+lst_bias)
 iraf.gbias('@'+lst_bias, procbias, rawpath=rawdir, fl_vardq='yes')
