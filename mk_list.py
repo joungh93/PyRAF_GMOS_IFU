@@ -268,7 +268,7 @@ for i, epoch_idx in enumerate(epochs):
     bias_list_path = Path(dir_bias) / bias_list_name
     
     with open(bias_list_path, "w") as f:
-        for _idx in epoch_idx:
+        for _idx in bias_groups[epoch_tag]['indices']:
             f.write(
                 f"{df['FILENAME'].values[_idx]}\n"
             )
