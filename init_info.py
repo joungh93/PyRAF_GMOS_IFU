@@ -11,7 +11,7 @@ dir_raw = 'raw/'
 # ----- Functions ----- #
 def clean_string(value):
     """
-    Make a header value safe for whitespace-separated info.txt.
+    Make a header value safe for whitespace-separated info.csv.
     """
     return str(value).strip().replace(" ", "_")
     
@@ -35,16 +35,16 @@ rawfile = sorted(glob.glob('*.fits'))
 
 
 # ----- Reading FITS headers ----- #
-f = open(current_dir+'/'+'info.txt','w')
+f = open(current_dir+'/'+'info.csv','w')
 
 f.write(
-    "# FILENAME OBJTYPE OBSCLASS CENTWAVE DATALAB EXPTIME "
-    "MASKNAME GRATING AIRMASS DATE-OBS MJD-OBS "
-    "INSTRUME DETECTOR CCDSUM AMPINTEG ROI GAIN_SIG\n"
+    "FILENAME|OBJTYPE|OBSCLASS|CENTWAVE|DATALAB|EXPTIME|"
+    "MASKNAME|GRATING|AIRMASS|DATE-OBS|MJD-OBS|"
+    "INSTRUME|DETECTOR|CCDSUM|AMPINTEG|ROI|GAIN_SIG\n"
 )
 
 
-# ----- Writing the 'info.txt' ----- #
+# ----- Writing the 'info.csv' ----- #
 for filename in rawfile:
 
     with fits.open(filename) as hdul:
@@ -106,7 +106,7 @@ for filename in rawfile:
             roi_list.append(
                 str(sec).replace(" ", "")
             )
-        roi_sig = "|".join(roi_list)
+        roi_sig = ",".join(roi_list)
         
         # Gain signature
         gain_list = []
@@ -121,22 +121,22 @@ for filename in rawfile:
         ### Writing the output files
         name = os.path.splitext(filename)[0]
         f.write(
-            f"{name} "
-            f"{objtype} "
-            f"{objclass} "
-            f"{centwave} "
-            f"{datalabel} "
-            f"{exptime} "
-            f"{mask} "
-            f"{grating} "
-            f"{airmass} "
-            f"{date} "
-            f"{mjd} "
-            f"{instrument} "
-            f"{detector} "
-            f"{ccdsum} "
-            f"{ampinteg} "
-            f"{roi_sig} "
+            f"{name}|"
+            f"{objtype}|"
+            f"{objclass}|"
+            f"{centwave}|"
+            f"{datalabel}|"
+            f"{exptime}|"
+            f"{mask}|"
+            f"{grating}|"
+            f"{airmass}|"
+            f"{date}|"
+            f"{mjd}|"
+            f"{instrument}|"
+            f"{detector}|"
+            f"{ccdsum}|"
+            f"{ampinteg}|"
+            f"{roi_sig}|"
             f"{gain_sig}\n"
         )
 
