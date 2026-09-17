@@ -128,13 +128,6 @@ env_paths  = conda_data['envs']
 env_path   = [Path(p) for p in env_paths if p.split("/")[-1] == "geminiconda"][0]
 
 
-####################
-####################
-####################
-####################
-####################
-####################
-
 
 '''
 Find star w/ iraf.dir('onedstds') ----- #
@@ -143,11 +136,50 @@ Check the standard star name from the header of the raw image (extension: 0, key
 $ find . -name *[standard starname]*
 '''
 
-starname = header_ref['OBJECT'].lower()    # 'wolf1346'
+starname = header_ref['OBJECT'].lower()    # e.g., 'wolf1346'
 '''
 Standard star name
 exact name of [starname].dat
 '''
+find_results = subprocess.run(
+    ["find", f"{env_path}/iraf/noao/lib/onedstds/", "-name", f"*{starname}*"],
+    capture_output=True,
+    text=True,
+    check=True,
+)
+find_star_list = find_results.stdout.split("\n")
+find_star_list.remove("")
+
+if len(find_star_list) == 0:
+    raise ValueError(
+        "Please manually check the star directory:\n"
+        f"Move to {env_path}/iraf/noao/lib/onedstds/"
+    )
+    
+elif len(find_star_list) == 1:
+    idx_select = 0
+    
+else:
+    nline_star_list = []
+    for file in find_star_list:
+        with open(file, 'r') as f:
+            ll = f.readlines()
+            nline_star_list.append(len(ll))
+    nline_star_list = np.asarray(nline_star_list)
+    idx_select = np.argmax(nline_star_list)
+
+subdir  = find_star_list[idx_select].split("onedstds/")[1].split("/")[0]
+stardir = f"onedstds${subdir}"
+    
+
+####################
+####################
+####################
+####################
+####################
+####################
+
+
 
 stardir = 'onedstds$spec50cal/'
 '''
