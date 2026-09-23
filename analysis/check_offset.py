@@ -18,8 +18,8 @@ from scipy import ndimage
 
 # ----- Loading Ha sum images ----- #
 current_dir = os.getcwd()
-working_dir = ic.dir_cmb
-os.chdir(working_dir)
+# working_dir = ic.dir_cmb
+# os.chdir(working_dir)
 # Ha_list = sorted(glob.glob("Ha_sum-*.fits"))
 
 
@@ -32,6 +32,8 @@ PA = h01['PA']*np.pi/180.
 
 # Writing WCS offset file
 f = open('offset.txt', 'w')
+g = open('offset_cubename.txt', 'w')
+
 for i in np.arange(len(ic.cube_list)):
 	h = fits.getheader(ic.cube_list[i], ext=0)
 
@@ -41,13 +43,21 @@ for i in np.arange(len(ic.cube_list)):
 	offset_X = (+offset_RA*np.cos(PA) - offset_Dec*np.sin(PA)) / ic.pixel_scale    # pixel
 	offset_Y = (+offset_RA*np.sin(PA) + offset_Dec*np.cos(PA)) / ic.pixel_scale    # pixel
 
-	print(ic.cube_name[i]+f" - RA offset: {offset_RA:.3f}, Dec offset: {offset_Dec:.3f}")
-	print(f"                 X offset: {offset_X:.3f} pix, Y offset: {offset_Y:.3f}")
+	offset_dist = np.sqrt(offset_X**2 + offset_Y**2)
+
+	print(ic.cube_name[i]+f" - RA offset: {offset_RA:.3f} arcsec, Dec offset: {offset_Dec:.3f} arcsec")
+	print(f"                 X offset: {offset_X:.3f} pixel, Y offset: {offset_Y:.3f} pixel")
+	print(f"                 Distance offset: {offset_dist:.3f} pixel")
 	print(f"                 Reference pixel ({h['CRPIX1']:.3f}, {h['CRPIX2']:.3f}) \n")
-	f.write(f"{offset_X:.3f}  {offset_Y:.3f} \n")
+	
+	f.write(f"{offset_X:.3f}  {offset_Y:.3f}  {offset_dist:.3f}\n")
+	if (offset_dist >= 2.0):
+		g.write(f"{ic.cube_name[i]}\n")
+
 f.close()
+g.close()
 
-
+'''
 # ----- Shifting & combining Ha sum images ----- #
 
 # Running an initial shift task
@@ -80,7 +90,7 @@ tile = "-tile grid mode manual -tile grid layout "
 cross = "-mode crosshair -lock crosshair image "
 os.system(disp+cross+"Ha_sum-*.fits al1_Ha_sum-*.fits "+tile+f"{len(ic.cube_list):d} 2 &")
 os.system(disp+"al1_fcomb.fits &")
-
+'''
 
 # # ----- Running IRAF/xregister task for the shifted Ha sum images ----- #
 # iraf.images()
