@@ -77,7 +77,7 @@ def get_mdf_name(
             f"Unknown detector: {dettype}"
         )
 
-    if ccd is None:
+    if (ccd is None) | (site == "n"):
         mdf = f"g{site}ifu_{ns}{slit}_mdf.fits"
     else:
         mdf = f"g{site}ifu_{ns}{slit}_mdf_{ccd}.fits"
@@ -299,7 +299,7 @@ except:
 # '''
 
 if (obs_site.split('-')[1] == "North"):
-    extinction = dir_iraf+'mk_extinct.txt'
+    extinction = str(dir_iraf / 'mk_extinct.txt')
 elif (obs_site.split('-')[1] == "South"):
     extinction = 'onedstds$ctioextinct.dat'
 '''
