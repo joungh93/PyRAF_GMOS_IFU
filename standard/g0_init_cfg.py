@@ -315,11 +315,11 @@ GMOS-S: 'onedstds$ctioextinct.dat'
 
 # If needed, please revise the following configurations manually!
 config = {
-    "dir_iraf": str(dir_iraf),
+    "dir_iraf": str(dir_iraf)+"/",
     "rawdir": str(rawdir)+"/",
-    "caldir": str(caldir),
-    "dir_db": str(dir_db),
-    "dir_bias": str(dir_bias),
+    "caldir": str(caldir)+"/",
+    "dir_db": str(dir_db)+"/",
+    "dir_bias": str(dir_bias)+"/",
 
     "dir_wav": dir_wav,
     "dict_frame": dict_frame,
